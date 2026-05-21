@@ -18,7 +18,7 @@ def ConectarMongo(a, b):
 
 def ImportarDataset(collection):
     try:
-        path = "datasets/race-result-horse.csv"
+        path = "TP_Integrador_BDDII/datasets/race-result-horse.csv"
         
         # Le cambiamos el alias a "archivo" para no pisar el nombre del módulo "csv"
         with open(path, 'r', encoding='UTF-8') as archivo:
