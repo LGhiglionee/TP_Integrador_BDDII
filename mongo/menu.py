@@ -17,12 +17,12 @@ def mostrarMenuBasicas (collection):
     opcion = 0
     while opcion != 6:
         print("\n --- Consultas Simples ---")
-        print("1.Obtener todos los caballos que sean entrenados P F YIU")
-        print("2.Todos los caballos que ganaron alguna carrera")
-        print("3.Caballos que pesan menos de 1000 ")
-        print("4.Cantidad de carreras que se corrieron")
-        print("5.Caballos con tiempos menores a 1.23.000 ")
-        print("6.Listar todos los codigos de carreras ")
+        print("1.Obtener todos los caballos que sean entrenados P F YIU.")
+        print("2.Todos los caballos que ganaron alguna carrera.")
+        print("3.Caballos que pesan menos de 1000.")
+        print("4.Cantidad de carreras que se corrieron.")
+        print("5.Caballos con tiempos menores a 1.23.00.")
+        print("6.Buscar historial por caballo.")
         
         try :        
             opcion = int(input("\nSeleccione una opción: "))    
@@ -30,7 +30,8 @@ def mostrarMenuBasicas (collection):
             if opcion == 2: caballosGanadores (collection)
             if opcion == 3: caballosMenoresDeMil (collection)
             if opcion == 4: cantCarreras (collection)
-
+            if opcion == 5: caballosVeloces(collection)
+            if opcion == 6: buscarHistorialCaballo (collection)
         except ValueError:
             print ("Debe ingresar un numero.")
 

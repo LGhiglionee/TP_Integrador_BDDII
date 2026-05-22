@@ -70,5 +70,55 @@ def cantCarreras (collection):
 
 #Caballos con finish_time menor a 1.23.00 
 def caballosVeloces (collection):
-    
-#Listar todos los codigos de carreras
+    try:
+        query = {
+            "finish_time": {
+                "$lt": "1.23.00", 
+                "$ne": "---"
+            }
+        }
+        nombres_no_repetidos = collection.distinct ("horse_name", query)
+        
+        if not nombres_no_repetidos:
+                print("No se encontraron resultados. Verificá los nombres de las columnas.")
+        else:
+            for nombre in nombres_no_repetidos:
+                print(f"- {nombre}")
+            print(f"\nTotal de caballos que llegaron con tiempo menor a 1 minuto 23 segundos: {len(nombres_no_repetidos)}")
+                                    
+    except Exception as e:
+        print(f"Error en la consulta: {e}")
+        
+#Buscar historial caballo
+def buscarHistorialCaballo (collection):
+    print(f"DEBUG: Encontré {collection.count_documents({'horse_name': 'DOUBLE DRAGON', 'race_id': '2014-001'})} veces la misma carrera.")
+    nombre = input ("\n Ingresar nombre del caballo que se quiere conocer la información:").upper().strip()
+    # Total de carreras jugadas.
+    total_carreras = collection.count_documents({"horse_name": nombre})
+    print("-" * 40)
+    print(f"\n Total de carreras jugadas por {nombre}: {total_carreras}")
+    if total_carreras == 0:
+            print(f"\nNo se encontraron registros para el caballo: {nombre}")
+            return
+    # Total de carreras ganadas.
+    ganadas = collection.count_documents({
+            "horse_name": nombre, 
+            "finishing_position": "1"
+        })
+    print("-" * 40)
+    print(f"\n Total de carreras ganadas por {nombre} : {ganadas}")
+
+    efectividad = (ganadas / total_carreras) * 100
+    print("-" * 40)
+    print(f"Efectividad de victoria: {efectividad:.2f}%")
+
+    # Total de carreras que corrió menos de 1 minuto.
+    rapidas = collection.count_documents ({
+        "horse_name": nombre,
+        "finish_time": {
+            "$lt": "1.00.00", 
+            "$ne": "---"
+            }
+        })
+    print("-" * 40)
+    print(f"\n Total de carreras con buenos tiempos de {nombre} :{rapidas}")    
