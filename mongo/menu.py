@@ -1,4 +1,5 @@
 from consultasBasicas import *
+from consultasAvanzadas import *
 
 def mostrarMenu(collection):
         opcion = 0
@@ -36,16 +37,20 @@ def mostrarMenuBasicas (collection):
             print ("Debe ingresar un numero.")
 
 def mostrarMenuComplejas (collection):
-        opcion = 0
-        while opcion != 6:
-            print("\n --- Consultas Complejas ---")
-        
-    
-#Tiempo promedio de carrera de todos los caballos
+    opcion = 0
+    while opcion != 6:
+        print("\n --- Consultas Complejas ---")
+        print("1.Tiempo promedio de todos los caballos")
+        print("2.Tiempo promedio de carrera de los caballos entrenados por P F YIU")
+        print("3. Todos los caballos con numero 10 y que el tiempo de carrera es menor a 1.22.70")
+        print("4. Listar todos los caballos que su nombre comience con la letra A")
+        print("5. TOP 10 de tiempos")
+        print("6. Salir")
 
-#Tiempo promedio de carrera de los caballos entrenados por P F YIU
+        try :        
+            opcion = int(input("\nSeleccione una opción: "))
+            if opcion == 3: caballos_diez_tiempo(collection)
+            if opcion == 4: caballosConA (collection)
 
-#Todos los caballos con numero 1o y que el tiempo de carrera es menor a 1.22.70
-
-#Listar todos los caballos que su nombre comience con la letra A
-
+        except ValueError:
+            print ("Debe ingresar un numero.")
