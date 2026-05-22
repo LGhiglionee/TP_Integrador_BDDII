@@ -1,4 +1,5 @@
 import csv
+import os
 from pymongo import MongoClient
 
 def ConectarMongo(a, b):
@@ -22,8 +23,9 @@ def ConectarMongo(a, b):
 
 def ImportarDataset(collection):
     try:
-        path = "TP_Integrador_BDDII/datasets/race-result-horse.csv"
+        ruta_script = os.path.dirname(os.path.abspath(__file__))
         
+        path = os.path.join(ruta_script, "..", "datasets", "race-result-horse.csv")
         # Le cambiamos el alias a "archivo" para no pisar el nombre del módulo "csv"
         with open(path, 'r', encoding='UTF-8') as archivo:
             
