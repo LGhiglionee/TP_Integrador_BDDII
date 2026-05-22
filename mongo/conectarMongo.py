@@ -8,7 +8,11 @@ def ConectarMongo(a, b):
         collection = db[b] # Colección
 
         # Le pasamos la colección como parámetro a la función
-        ImportarDataset(collection)
+        if collection.count_documents({}) == 0:
+            print("Base de datos vacía. Iniciando importación...")
+            ImportarDataset(collection)
+        else:
+            print(f"La colección '{b}' ya contiene datos. Saltando importación.")
 
         return collection
 
