@@ -18,7 +18,7 @@ def caballosEntrenadosP_F_YIU(collection):
 #Todos los caballos que ganaron alguna carrera
 def caballosGanadores (collection):
     try:
-        query = {"finishing_position":"1"}
+        query = {"finishing_position":1}
         nombres_no_repetidos = collection.distinct ("horse_name", query)
         
         if not nombres_no_repetidos:
@@ -34,18 +34,7 @@ def caballosGanadores (collection):
 #Caballos que pesan menos de la media.
 def caballosMenoresDeMil (collection):
     try:
-        query = {
-            "$expr": {
-                "$lt": [
-                    {"$convert": {
-                            "input": "$declared_horse_weight",
-                            "to": "int",
-                            "onError": 9999,  # Si hay un "-", le pone 9999 para que no sea < 1000
-                            "onNull": 9999    # Si está vacío, también le pone 9999
-                        }
-                    },1000
-                ]}
-            }
+        query = {"actual_weight" : {"$lt" : 1000}}
         nombres_no_repetidos = collection.distinct ("horse_name", query)
         
         if not nombres_no_repetidos:
@@ -71,12 +60,8 @@ def cantCarreras (collection):
 #Caballos con finish_time menor a 1.23.00 
 def caballosVeloces (collection):
     try:
-        query = {
-            "finish_time": {
-                "$lt": "1.23.00", 
-                "$ne": "---"
-            }
-        }
+        query = {"finish_time_seconds": {"$lt" : 83.00}}
+
         nombres_no_repetidos = collection.distinct ("horse_name", query)
         
         if not nombres_no_repetidos:
@@ -102,7 +87,7 @@ def buscarHistorialCaballo (collection):
     # Total de carreras ganadas.
     ganadas = collection.count_documents({
             "horse_name": nombre, 
-            "finishing_position": "1"
+            "finishing_position": 1
         })
     print("-" * 40)
     print(f"\n Total de carreras ganadas por {nombre} : {ganadas}")
@@ -114,10 +99,8 @@ def buscarHistorialCaballo (collection):
     # Total de carreras que corrió menos de 1 minuto.
     rapidas = collection.count_documents ({
         "horse_name": nombre,
-        "finish_time": {
-            "$lt": "1.00.00", 
-            "$ne": "---"
-            }
+        "finish_time_seconds": {
+            "$lt": 60}
         })
     print("-" * 40)
     print(f"\n Total de carreras con buenos tiempos de {nombre} :{rapidas}")    

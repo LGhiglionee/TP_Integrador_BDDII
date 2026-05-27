@@ -24,6 +24,7 @@ def mostrarMenuBasicas (collection):
         print("4.Cantidad de carreras que se corrieron.")
         print("5.Caballos con tiempos menores a 1.23.00.")
         print("6.Buscar historial por caballo.")
+        print("7.Volver al menu")
         
         try :        
             opcion = int(input("\nSeleccione una opción: "))    
@@ -33,6 +34,8 @@ def mostrarMenuBasicas (collection):
             if opcion == 4: cantCarreras (collection)
             if opcion == 5: caballosVeloces(collection)
             if opcion == 6: buscarHistorialCaballo (collection)
+            if opcion == 7: return
+            
         except ValueError:
             print ("Debe ingresar un numero.")
 
@@ -45,12 +48,16 @@ def mostrarMenuComplejas (collection):
         print("3. Todos los caballos con numero 10 y que el tiempo de carrera es menor a 1.22.70")
         print("4. Listar todos los caballos que su nombre comience con la letra A")
         print("5. TOP 10 de tiempos")
-        print("6. Salir")
+        print("6. Volver al menu")
 
-        try :        
+        try :
             opcion = int(input("\nSeleccione una opción: "))
+            if opcion == 1: promedio_tiempo_todos(collection)
+            if opcion == 2: promedio_tiempo_entrenador(collection)
             if opcion == 3: caballos_diez_tiempo(collection)
             if opcion == 4: caballosConA (collection)
+            if opcion == 5: top_10_tiempos(collection)
+            if opcion == 6: return
 
         except ValueError:
             print ("Debe ingresar un numero.")

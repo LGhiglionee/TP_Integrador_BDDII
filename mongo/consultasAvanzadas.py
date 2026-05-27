@@ -1,8 +1,60 @@
 #Tiempo promedio de carrera de todos los caballos
 
-#Tiempo promedio de carrera de los caballos entrenados por P F YIU
+def promedio_tiempo_todos(collection):
+    try:
+        query = {}
+        proyeccion = {"finish_time_seconds": 1, "_id": 0}
+        
+        resultados = list(collection.find(query, proyeccion))
+        
+        if not resultados:
+            print("No se encontraron resultados para calcular el promedio.")
+        else:
+            suma_tiempos = 0
+            cantidad_caballos = 0
+            for caballo in resultados:
+                if 'finish_time_seconds' in caballo:
+                    suma_tiempos += caballo['finish_time_seconds']
+                    cantidad_caballos += 1
+            
+            if cantidad_caballos > 0:
+                promedio = suma_tiempos / cantidad_caballos
+                print(f"Tiempo promedio de carrera de TODOS los caballos: {promedio:.2f} segundos")
+            else:
+                print("No hay tiempos válidos para promediar.")
+                
+    except Exception as e:
+        print(f"Error en la consulta: {e}")
 
-#Todos los caballos con numero 1o0y que el tiempo de carrera es menor a 1.22.70
+#Tiempo promedio de carrera de los caballos entrenados por P F YIU
+def promedio_tiempo_entrenador(collection):
+    try:
+        query = {"trainer": "P F YIU"}
+        proyeccion = {"finish_time_seconds": 1, "_id": 0}
+        
+        resultados = list(collection.find(query, proyeccion))
+        
+        if not resultados:
+            print("No se encontraron resultados para el entrenador P F YIU.")
+        else:
+            suma_tiempos = 0
+            cantidad_caballos = 0
+        
+            for caballo in resultados:
+                if 'finish_time_seconds' in caballo:
+                    suma_tiempos += caballo['finish_time_seconds']
+                    cantidad_caballos += 1
+            
+            if cantidad_caballos > 0:
+                promedio = suma_tiempos / cantidad_caballos
+                print(f"Tiempo promedio de P F YIU: {promedio:.2f} segundos")
+            else:
+                print("No hay tiempos válidos para promediar.")
+                
+    except Exception as e:
+        print(f"Error en la consulta: {e}")
+        
+#Todos los caballos con numero 10 y que el tiempo de carrera es menor a 1.22.70
 def caballos_diez_tiempo(collection):
     try:
         query = {
@@ -42,7 +94,7 @@ def caballosConA (collection):
 
 #TOP 10 de tiempos
 
-'''def top_10_tiempos(collection):
+def top_10_tiempos(collection):
     try:
         query = {}
         proyeccion = {
@@ -50,14 +102,14 @@ def caballosConA (collection):
             "finish_time": 1,
             "_id": 0
         }
-        resultados = collection.find(query, proyeccion).sort("finish_time", 1).limit(10)
+        resultados = collection.find(query, proyeccion).sort("finish_time_seconds").limit(10)
         
         print("TOP 10 de los tiempos más rápidos:")
         
         posicion = 1
         for caballo in resultados:
-            print(f"Puesto {posicion}: {caballo}")
+            print(f"Puesto {posicion}: {caballo['horse_name']} con tiempo {caballo['finish_time']}")
             posicion += 1
             
     except Exception as e:
-        print(f"Error en la consulta: {e}")'''
+        print(f"Error en la consulta: {e}")
