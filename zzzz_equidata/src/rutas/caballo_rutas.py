@@ -1,0 +1,1 @@
+"""Endpoints (GET, POST) para caballos"""

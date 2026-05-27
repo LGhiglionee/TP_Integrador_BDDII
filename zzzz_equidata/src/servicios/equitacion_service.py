@@ -1,0 +1,1 @@
+"""Lógica de negocio (Acá ocurren los "JOINs" entre Mongo y Redis)"""

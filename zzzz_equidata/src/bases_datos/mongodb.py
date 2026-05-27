@@ -1,0 +1,1 @@
+"""Cliente de Mongo y su lógica de conexión"""
