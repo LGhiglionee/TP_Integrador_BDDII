@@ -8,7 +8,7 @@ def promedio_tiempo_todos(collection):
         resultados = list(collection.find(query, proyeccion))
         
         if not resultados:
-            print("No se encontraron resultados para calcular el promedio.")
+            print("No se encontraron resultados para poder calcular el promedio.")
         else:
             suma_tiempos = 0
             cantidad_caballos = 0
@@ -19,7 +19,7 @@ def promedio_tiempo_todos(collection):
             
             if cantidad_caballos > 0:
                 promedio = suma_tiempos / cantidad_caballos
-                print(f"Tiempo promedio de carrera de TODOS los caballos: {promedio:.2f} segundos")
+                print(f"El tiempo promedio de carrera de todos los caballos fue de: {promedio:.2f} segundos")
             else:
                 print("No hay tiempos válidos para promediar.")
                 
@@ -35,7 +35,7 @@ def promedio_tiempo_entrenador(collection):
         resultados = list(collection.find(query, proyeccion))
         
         if not resultados:
-            print("No se encontraron resultados para el entrenador P F YIU.")
+            print("No se encontraron resultados de caballos entrenados por P F YIU.")
         else:
             suma_tiempos = 0
             cantidad_caballos = 0
@@ -47,7 +47,7 @@ def promedio_tiempo_entrenador(collection):
             
             if cantidad_caballos > 0:
                 promedio = suma_tiempos / cantidad_caballos
-                print(f"Tiempo promedio de P F YIU: {promedio:.2f} segundos")
+                print(f"El tiempo promedio de los caballos entrenados por P F YIU fue de: {promedio:.2f} segundos")
             else:
                 print("No hay tiempos válidos para promediar.")
                 
@@ -66,9 +66,9 @@ def caballos_diez_tiempo(collection):
         if not nombres_no_repetidos:
             print("No se encontraron resultados. Verificá los nombres de las columnas.")
         else:
+            print(f"\nLos caballos con el numero 10 y tiempo menor a 1.22.70 fueron: {len(nombres_no_repetidos)}")
             for nombre in nombres_no_repetidos:
                 print(f"- {nombre}")
-            print(f"\nCaballos con el numero 10 y tiempo menor a 1.22.70: {len(nombres_no_repetidos)}")
             
     except Exception as e:
         print(f"Error en la consulta: {e}")
@@ -85,9 +85,9 @@ def caballosConA (collection):
         if not nombres_no_repetidos:
             print("No se encontraron resultados. Verificá los nombres de las columnas.")
         else:
+            print(f"\nLos caballos que comienzan con la letra A son: {len(nombres_no_repetidos)}")            
             for nombre in nombres_no_repetidos:
                 print(f"- {nombre}")
-            print(f"\nCaballos que comiencen con la letra A: {len(nombres_no_repetidos)}")
             
     except Exception as e:
         print(f"Error en la consulta: {e}")
@@ -104,11 +104,11 @@ def top_10_tiempos(collection):
         }
         resultados = collection.find(query, proyeccion).sort("finish_time_seconds").limit(10)
         
-        print("TOP 10 de los tiempos más rápidos:")
+        print("El top 10 de los caballos más rápidos:")
         
         posicion = 1
         for caballo in resultados:
-            print(f"Puesto {posicion}: {caballo['horse_name']} con tiempo {caballo['finish_time']}")
+            print(f"Puesto {posicion}: El caballo {caballo['horse_name']} con un tiempo de: {caballo['finish_time']}")
             posicion += 1
             
     except Exception as e:

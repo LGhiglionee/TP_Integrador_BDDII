@@ -8,9 +8,9 @@ def caballosEntrenadosP_F_YIU(collection):
         if not nombres_no_repetidos:
             print("No se encontraron resultados. Verificá los nombres de las columnas.")
         else:
+            print(f"\nEl total de caballos entrenados por P F YIU es {len(nombres_no_repetidos)}")
             for nombre in nombres_no_repetidos:
                 print(f"- {nombre}")
-            print(f"\nTotal de caballos entrenados por P F YIU: {len(nombres_no_repetidos)}")
             
     except Exception as e:
         print(f"Error en la consulta: {e}")
@@ -24,9 +24,9 @@ def caballosGanadores (collection):
         if not nombres_no_repetidos:
             print("No se encontraron resultados. Verificá los nombres de las columnas.")
         else:
+            print(f"\nEl total de caballos ganadores es {len(nombres_no_repetidos)}")            
             for nombre in nombres_no_repetidos:
                 print(f"- {nombre}")
-            print(f"\nTotal de caballos ganadores: {len(nombres_no_repetidos)}")
                 
     except Exception as e:
         print(f"Error en la consulta: {e}")
@@ -40,9 +40,9 @@ def caballosMenoresDeMil (collection):
         if not nombres_no_repetidos:
             print("No se encontraron resultados. Verificá los nombres de las columnas.")
         else:
+            print(f"\nEl total de caballos que pesan menos de 1000 libras es {len(nombres_no_repetidos)}")
             for nombre in nombres_no_repetidos:
                 print(f"- {nombre}")
-            print(f"\nTotal de caballos que pesan menos de 1000 libras: {len(nombres_no_repetidos)}")
                 
     except Exception as e:
         print(f"Error en la consulta: {e}")
@@ -52,7 +52,7 @@ def cantCarreras (collection):
     try:
         races_unicas = collection.distinct("race_id")
         total = len(races_unicas)
-        print(f"Cantidad total de carreras que se corrieron: {total}")
+        print(f"\nLa cantidad total de carreras que se corrieron fue {total}")
                 
     except Exception as e:
         print(f"Error en la consulta: {e}")
@@ -67,34 +67,33 @@ def caballosVeloces (collection):
         if not nombres_no_repetidos:
                 print("No se encontraron resultados. Verificá los nombres de las columnas.")
         else:
+            print(f"\nEl total de caballos que llegaron con tiempo menor a 1 minuto 23 segundos es {len(nombres_no_repetidos)}")            
             for nombre in nombres_no_repetidos:
                 print(f"- {nombre}")
-            print(f"\nTotal de caballos que llegaron con tiempo menor a 1 minuto 23 segundos: {len(nombres_no_repetidos)}")
                                     
     except Exception as e:
         print(f"Error en la consulta: {e}")
         
 #Buscar historial caballo
 def buscarHistorialCaballo (collection):
-    nombre = input ("\n Ingresar nombre del caballo que se quiere conocer la información:").upper().strip()
+    nombre = input ("\n Ingresar nombre del caballo el cual se quiere conocer el historial:").upper().strip()
     # Total de carreras jugadas.
     total_carreras = collection.count_documents({"horse_name": nombre})
     if total_carreras == 0:
             print(f"\nNo se encontraron registros para el caballo: {nombre}")
             return
-    print("-" * 40)
-    print(f"\n Total de carreras jugadas por {nombre}: {total_carreras}")
+    print(f"\nEl total de carreras jugadas por {nombre} fue {total_carreras}")
     # Total de carreras ganadas.
     ganadas = collection.count_documents({
             "horse_name": nombre, 
             "finishing_position": 1
         })
-    print("-" * 40)
-    print(f"\n Total de carreras ganadas por {nombre} : {ganadas}")
+    print("")
+    print(f"El total de carreras ganadas por {nombre} fue {ganadas}")
 
     efectividad = (ganadas / total_carreras) * 100
-    print("-" * 40)
-    print(f"Efectividad de victoria: {efectividad:.2f}%")
+    print("")
+    print(f"La efectividad de victoria de {nombre} fue {efectividad:.2f}%")
 
     # Total de carreras que corrió menos de 1 minuto.
     rapidas = collection.count_documents ({
@@ -102,5 +101,5 @@ def buscarHistorialCaballo (collection):
         "finish_time_seconds": {
             "$lt": 60}
         })
-    print("-" * 40)
-    print(f"\n Total de carreras con buenos tiempos de {nombre} :{rapidas}")    
+    print("")
+    print(f"El total de carreras corridas con tiempo menor a 1 minuto de {nombre} fueron {rapidas}")
