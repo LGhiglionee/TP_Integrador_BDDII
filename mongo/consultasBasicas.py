@@ -79,11 +79,11 @@ def buscarHistorialCaballo (collection):
     nombre = input ("\n Ingresar nombre del caballo que se quiere conocer la información:").upper().strip()
     # Total de carreras jugadas.
     total_carreras = collection.count_documents({"horse_name": nombre})
-    print("-" * 40)
-    print(f"\n Total de carreras jugadas por {nombre}: {total_carreras}")
     if total_carreras == 0:
             print(f"\nNo se encontraron registros para el caballo: {nombre}")
             return
+    print("-" * 40)
+    print(f"\n Total de carreras jugadas por {nombre}: {total_carreras}")
     # Total de carreras ganadas.
     ganadas = collection.count_documents({
             "horse_name": nombre, 
