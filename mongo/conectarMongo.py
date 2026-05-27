@@ -30,7 +30,7 @@ def ImportarDataset(collection):
         with open(path, 'r', encoding='UTF-8') as archivo:
             
             # Ahora sí detecta correctamente el módulo csv
-            lector = csv.DictReader(archivo)
+            lector = csv.DictReader(archivo, delimiter=';')
             documentos = list(lector)
             
             if documentos:
