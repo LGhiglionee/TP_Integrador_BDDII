@@ -1,1 +1,0 @@
-"""Modelos de Pydantic (validación de datos de entrada/salida)"""
