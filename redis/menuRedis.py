@@ -1,6 +1,5 @@
-from consultasBasicas import crearCarrera, generarApuestasFicticias
+from consultasBasicas import *
 from consultasAvanzadas import *
-from simulacionCarrera import *
 
 def mostrarMenuRedis(redis_db):
 
@@ -83,27 +82,27 @@ def mostrarMenuAvanzadasRedis(redis_db):
             opcion = int(input("\nSeleccione una opción: "))
 
             if opcion == 1:
-                idCarrera = int(input("Ingrese ID de carrera: "))
+                idCarrera = str(input("Ingrese ID de carrera: "))
                 simularCarrera(redis_db, idCarrera)
 
             if opcion == 2:
-                idCarrera = int(input("Ingrese ID de carrera: "))
+                idCarrera = str(input("Ingrese ID de carrera: "))
                 verRanking(redis_db, idCarrera)
 
             if opcion == 3:
-                idCarrera = int(input("Ingrese ID de carrera: "))
+                idCarrera = str(input("Ingrese ID de carrera: "))
                 obtenerGanador(redis_db, idCarrera)
 
             if opcion == 4:
-                idCarrera = int(input("Ingrese ID de carrera: "))
+                idCarrera = str(input("Ingrese ID de carrera: "))
                 finalizarCarrera(redis_db, idCarrera)
 
             if opcion == 5:
-                idCarrera = int(input("Ingrese ID de carrera: "))
+                idCarrera = str(input("Ingrese ID de carrera: "))
                 actualizarApuestas(redis_db, idCarrera)
 
             if opcion == 6:
-                idCarrera = int(input("Ingrese ID de carrera: "))
+                idCarrera = str(input("Ingrese ID de carrera: "))
                 expirarDatosCarrera(redis_db, idCarrera)
 
         except ValueError:
