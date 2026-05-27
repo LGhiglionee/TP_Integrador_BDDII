@@ -1,6 +1,7 @@
-#actualizar posiciones
-#ver ranking en tiempo real
-#obtener ganador
-#actualizar apuestas ganadas/perdidas
-#expirar datos temporales
+#Simular carrera en tiempo real.
+#Ver ranking actual de una carrera
+#Obtener caballo ganador.
+#Finalizar carrera
+#Actualizar apuestas ganadas/perdidas
+#Expirar datos temporales de una carrera
 
