@@ -29,7 +29,7 @@ def promedio_tiempo_todos(collection):
 #Tiempo promedio de carrera de los caballos entrenados por P F YIU
 def promedio_tiempo_entrenador(collection):
     try:
-        query = {"trainer": "P F YIU"}
+        query = {"trainer": {"$regex": "P.*F.*YIU", "$options": "i"}}
         proyeccion = {"finish_time_seconds": 1, "_id": 0}
         
         resultados = list(collection.find(query, proyeccion))
@@ -53,13 +53,13 @@ def promedio_tiempo_entrenador(collection):
                 
     except Exception as e:
         print(f"Error en la consulta: {e}")
-        
+
 #Todos los caballos con numero 10 y que el tiempo de carrera es menor a 1.22.70
 def caballos_diez_tiempo(collection):
     try:
         query = {
-            "horse_number": "10",
-            "finish_time": { "$lt": "1.22.70" }
+            "horse_number": 10,
+            "finish_time_seconds": { "$lt": 82.70 }
         }
         nombres_no_repetidos = collection.distinct ("horse_name", query)
         
@@ -68,7 +68,7 @@ def caballos_diez_tiempo(collection):
         else:
             for nombre in nombres_no_repetidos:
                 print(f"- {nombre}")
-            print(f"\nCaballos con el numero 10 y tiempo menor a 1.22.70 {len(nombres_no_repetidos)}")
+            print(f"\nCaballos con el numero 10 y tiempo menor a 1.22.70: {len(nombres_no_repetidos)}")
             
     except Exception as e:
         print(f"Error en la consulta: {e}")
