@@ -34,12 +34,12 @@ app.include_router(auth_router, prefix="/auth", tags=["Autenticación"])
 # --- EVENTOS DE CICLO DE VIDA ---
 @app.on_event("startup")
 async def startup_event():
-    print("🚀 EquiData API Iniciando...")
+    print("EquiData API Iniciando...")
     # TODO: Acá inicializaremos las conexiones a MongoDB y Redis
 
 @app.on_event("shutdown")
 async def shutdown_event():
-    print("🛑 EquiData API Cerrando...")
+    print("EquiData API Cerrando...")
     # TODO: Acá cerraremos las conexiones a las bases de datos de forma segura
 
 # --- ENDPOINT BASE (Health Check) ---
@@ -47,6 +47,5 @@ async def shutdown_event():
 async def root():
     return {
         "mensaje": "Bienvenido a EquiData API",
-        "estado": "En línea",
         "grupo": 10
     }

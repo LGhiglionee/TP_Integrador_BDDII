@@ -91,7 +91,6 @@ def caballosVeloces (collection):
         
 #Buscar historial caballo
 def buscarHistorialCaballo (collection):
-    print(f"DEBUG: Encontré {collection.count_documents({'horse_name': 'DOUBLE DRAGON', 'race_id': '2014-001'})} veces la misma carrera.")
     nombre = input ("\n Ingresar nombre del caballo que se quiere conocer la información:").upper().strip()
     # Total de carreras jugadas.
     total_carreras = collection.count_documents({"horse_name": nombre})
