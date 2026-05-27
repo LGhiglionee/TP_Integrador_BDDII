@@ -34,7 +34,7 @@ def caballosGanadores (collection):
 #Caballos que pesan menos de la media.
 def caballosMenoresDeMil (collection):
     try:
-        query = {"actual_weight" : {"$lt" : 1000}}
+        query = {"declared_horse_weight" : {"$lt" : 1000}}
         nombres_no_repetidos = collection.distinct ("horse_name", query)
         
         if not nombres_no_repetidos:
