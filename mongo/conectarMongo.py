@@ -30,8 +30,18 @@ def ImportarDataset(collection):
         with open(path, 'r', encoding='UTF-8') as archivo:
             
             # Ahora sí detecta correctamente el módulo csv
-            lector = csv.DictReader(archivo)
-            documentos = list(lector)
+            lector = csv.DictReader(archivo, delimiter=';')
+            documentos = []
+            for fila in lector:
+                if fila.get('finish_time_seconds'): fila['finish_time_seconds'] = float(fila['finish_time_seconds'])
+                if fila.get('finishing_position'): fila['finishing_position'] = int(fila['finishing_position'])
+                if fila.get('actual_weight'): fila['actual_weight'] = int(fila['actual_weight'])
+                if fila.get('horse_number'): fila['horse_number'] = int(fila['horse_number'])
+                if fila.get('declared_horse_weight'): fila['declared_horse_weight'] = int(fila['declared_horse_weight'])
+                if fila.get('running_position_1'): fila['running_position_1'] = int(fila['running_position_1'])
+                if fila.get('running_position_2'): fila['running_position_2'] = int(fila['running_position_2'])
+                if fila.get('running_position_3'): fila['running_position_3'] = int(fila['running_position_3'])
+                documentos.append(fila)
             
             if documentos:
                 # Usa la colección que le llegó por parámetro
