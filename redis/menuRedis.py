@@ -1,6 +1,5 @@
 from consultasBasicas import *
 from consultasAvanzadas import *
-from simulacionCarrera import *
 
 def mostrarMenuRedis(redis_db):
 
@@ -32,39 +31,34 @@ def mostrarMenuBasicasRedis(redis_db):
     while opcion != 7:
         print("\n--- Consultas Simples Redis ---")
         print("1. Crear carrera.")
-        print("2. Cargar caballos de prueba.")
-        print("3. Generar apuestas ficticias.")
-        print("4. Ver estado de una carrera.")
-        print("5. Ver participantes de una carrera.")
-        print("6. Ver apuestas activas de una carrera.")
-        print("7. Salir.")
+        print("2. Generar apuestas ficticias.")
+        print("3. Ver estado de una carrera.")
+        print("4. Ver participantes de una carrera.")
+        print("5. Ver apuestas activas de una carrera.")
+        print("6. Salir.")
 
         try:
             opcion = int(input("\nSeleccione una opción: "))
 
             if opcion == 1:
-                idCarrera = int(input("Ingrese ID de carrera: "))
+                idCarrera = str(input("Ingrese ID de carrera: "))
                 crearCarrera(redis_db, idCarrera)
 
             if opcion == 2:
-                idCarrera = int(input("Ingrese ID de carrera: "))
-                cargarCaballosPrueba(redis_db, idCarrera)
-
-            if opcion == 3:
-                idCarrera = int(input("Ingrese ID de carrera: "))
+                idCarrera = str(input("Ingrese ID de carrera: "))
                 cantidadApuestas = int(input("Ingrese cantidad de apuestas ficticias: "))
                 generarApuestasFicticias(redis_db, idCarrera, cantidadApuestas)
 
-            if opcion == 4:
-                idCarrera = int(input("Ingrese ID de carrera: "))
+            if opcion == 3:
+                idCarrera = str(input("Ingrese ID de carrera: "))
                 verEstadoCarrera(redis_db, idCarrera)
 
-            if opcion == 5:
-                idCarrera = int(input("Ingrese ID de carrera: "))
+            if opcion == 4:
+                idCarrera = str(input("Ingrese ID de carrera: "))
                 verParticipantes(redis_db, idCarrera)
 
-            if opcion == 6:
-                idCarrera = int(input("Ingrese ID de carrera: "))
+            if opcion == 5:
+                idCarrera = str(input("Ingrese ID de carrera: "))
                 verApuestasActivas(redis_db, idCarrera)
 
         except ValueError:
@@ -88,27 +82,27 @@ def mostrarMenuAvanzadasRedis(redis_db):
             opcion = int(input("\nSeleccione una opción: "))
 
             if opcion == 1:
-                idCarrera = int(input("Ingrese ID de carrera: "))
+                idCarrera = str(input("Ingrese ID de carrera: "))
                 simularCarrera(redis_db, idCarrera)
 
             if opcion == 2:
-                idCarrera = int(input("Ingrese ID de carrera: "))
+                idCarrera = str(input("Ingrese ID de carrera: "))
                 verRanking(redis_db, idCarrera)
 
             if opcion == 3:
-                idCarrera = int(input("Ingrese ID de carrera: "))
+                idCarrera = str(input("Ingrese ID de carrera: "))
                 obtenerGanador(redis_db, idCarrera)
 
             if opcion == 4:
-                idCarrera = int(input("Ingrese ID de carrera: "))
+                idCarrera = str(input("Ingrese ID de carrera: "))
                 finalizarCarrera(redis_db, idCarrera)
 
             if opcion == 5:
-                idCarrera = int(input("Ingrese ID de carrera: "))
+                idCarrera = str(input("Ingrese ID de carrera: "))
                 actualizarApuestas(redis_db, idCarrera)
 
             if opcion == 6:
-                idCarrera = int(input("Ingrese ID de carrera: "))
+                idCarrera = str(input("Ingrese ID de carrera: "))
                 expirarDatosCarrera(redis_db, idCarrera)
 
         except ValueError:
