@@ -1,9 +1,3 @@
-#Simular carrera en tiempo real.
-#Ver ranking actual de una carrera
-#Obtener caballo ganador.
-#Finalizar carrera
-#Actualizar apuestas ganadas/perdidas
-#Expirar datos temporales de una carrera
 import time
 import random
 
@@ -78,3 +72,126 @@ def obtenerGanador(redis_db, idCarrera):
     nombre = caballo.get("horse_name", horse_id)
 
     print(f"Ganador: {nombre} con {int(puntaje)} puntos")
+
+
+#Finalizar carrera
+def finalizarCarrera(redis_db, idCarrera):
+
+    idCarrera = str(idCarrera).strip()
+
+    carrera_key = f"carrera:{idCarrera}:info"
+    ranking_key = f"carrera:{idCarrera}:ranking"
+
+    if not redis_db.exists(carrera_key):
+        print(f"La carrera {idCarrera} no existe.")
+        return
+
+    ganador = redis_db.zrevrange(ranking_key, 0, 0, withscores=True)
+
+    if not ganador:
+        print(f"No hay ranking cargado para la carrera {idCarrera}.")
+        return
+
+    horse_id_ganador = ganador[0][0]
+    puntaje = ganador[0][1]
+
+    caballo_key = f"carrera:{idCarrera}:caballo:{horse_id_ganador}"
+    caballo = redis_db.hgetall(caballo_key)
+
+    nombre_ganador = caballo.get("horse_name", horse_id_ganador)
+    
+    redis_db.hset(carrera_key, "estado", "finalizada")
+    redis_db.hset(carrera_key, "ganador", horse_id_ganador)
+    redis_db.hset(carrera_key, "nombre_ganador", nombre_ganador)
+    redis_db.hset(carrera_key, "puntaje_ganador", int(puntaje))
+
+    print(f"\nCarrera {idCarrera} finalizada.")
+    print(f"Ganador: {nombre_ganador} con {int(puntaje)} puntos.")
+    
+#Actualizar apuestas ganadas/perdidas
+def actualizarApuestas(redis_db, idCarrera):
+
+    idCarrera = str(idCarrera).strip()
+
+    carrera_key = f"carrera:{idCarrera}:info"
+    apuestas_key = f"carrera:{idCarrera}:apuestas"
+
+    if not redis_db.exists(carrera_key):
+        print(f"La carrera {idCarrera} no existe.")
+        return
+
+    carrera = redis_db.hgetall(carrera_key)
+    horse_id_ganador = carrera.get("ganador")
+
+    if not horse_id_ganador:
+        print("La carrera todavía no tiene ganador. Primero debe finalizarse.")
+        return
+
+    apuestas = redis_db.smembers(apuestas_key)
+
+    if not apuestas:
+        print(f"No hay apuestas para actualizar en la carrera {idCarrera}.")
+        return
+
+    ganadas = 0
+    perdidas = 0
+
+    for apuesta_id in apuestas:
+
+        apuesta_key = f"carrera:{idCarrera}:apuesta:{apuesta_id}"
+
+        apuesta = redis_db.hgetall(apuesta_key)
+
+        horse_id_apostado = apuesta.get("horse_id")
+
+        if horse_id_apostado == horse_id_ganador:
+            redis_db.hset(apuesta_key, "estado", "ganada")
+            ganadas += 1
+        else:
+            redis_db.hset(apuesta_key, "estado", "perdida")
+            perdidas += 1
+
+    print(f"\nApuestas actualizadas para la carrera {idCarrera}.")
+    print(f"Apuestas ganadas: {ganadas}")
+    print(f"Apuestas perdidas: {perdidas}")
+    
+    
+#Expirar datos temporales de una carrera
+def expirarDatosCarrera(redis_db, idCarrera):
+
+    idCarrera = str(idCarrera).strip()
+
+    segundos_expiracion = 3600
+
+    participantes_key = f"carrera:{idCarrera}:participantes"
+    ranking_key = f"carrera:{idCarrera}:ranking"
+    carrera_key = f"carrera:{idCarrera}:info"
+    apuestas_key = f"carrera:{idCarrera}:apuestas"
+
+    if redis_db.exists(carrera_key):
+
+        redis_db.expire(carrera_key, segundos_expiracion)
+        redis_db.expire(participantes_key, segundos_expiracion)
+        redis_db.expire(ranking_key, segundos_expiracion)
+        redis_db.expire(apuestas_key, segundos_expiracion)
+
+        participantes = redis_db.smembers(participantes_key)
+
+        for horse_id in participantes:
+
+            caballo_key = f"carrera:{idCarrera}:caballo:{horse_id}"
+
+            redis_db.expire(caballo_key, segundos_expiracion)
+
+        apuestas = redis_db.smembers(apuestas_key)
+
+        for apuesta_id in apuestas:
+
+            apuesta_key = f"carrera:{idCarrera}:apuesta:{apuesta_id}"
+
+            redis_db.expire(apuesta_key, segundos_expiracion)
+
+        print(f"Los datos de la carrera {idCarrera} expirarán en {segundos_expiracion} segundos.")
+
+    else:
+        print(f"La carrera {idCarrera} no existe.")

@@ -28,7 +28,7 @@ def mostrarMenuRedis(redis_db):
 def mostrarMenuBasicasRedis(redis_db):
     opcion = 0
 
-    while opcion != 7:
+    while opcion != 6:
         print("\n--- Consultas Simples Redis ---")
         print("1. Crear carrera.")
         print("2. Generar apuestas ficticias.")
