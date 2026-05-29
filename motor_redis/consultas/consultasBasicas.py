@@ -1,5 +1,5 @@
 import random
-from conectarRedis import leerDataset
+from motor_redis.conectarRedis import leerDataset
 
 #crear carrera + cargar caballos
 def crearCarrera(redis_db, idCarrera):

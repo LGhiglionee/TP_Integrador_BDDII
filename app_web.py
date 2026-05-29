@@ -1,7 +1,10 @@
 import streamlit as st
 
-from mongo.conectarMongo import ConectarMongo
+from motor_mongo.conectarMongo import ConectarMongo
 from vistas.vista_mongo import mostrar_mongo
+from motor_redis.conectarRedis import conectarRedis
+from vistas.vista_redis import mostrar_redis
+
 # Configuración de la página web
 st.set_page_config(page_title="Dashboard Multimotor", layout="wide")
 st.title("Trabajo Práctico Integrador - EQUIDATA")
@@ -11,7 +14,11 @@ st.title("Trabajo Práctico Integrador - EQUIDATA")
 def obtener_coleccion_mongo():
     return ConectarMongo("Cursus", "InfoHorses")
 
+def obtener_conexion_redis():
+    return conectarRedis()
+
 colleccion_mongo = obtener_coleccion_mongo()
+redis_db = obtener_conexion_redis()
 
 # Sistema de pestañas
 tab_mongo, tab_redis, tab_cassandra, tab_neo4j = st.tabs([
@@ -24,12 +31,8 @@ tab_mongo, tab_redis, tab_cassandra, tab_neo4j = st.tabs([
 with tab_mongo:
     mostrar_mongo (colleccion_mongo)
     
-# ==================== PLACEHOLDERS PARA OTROS MOTORES ====================
 with tab_redis:
-    st.header("Consultas en Redis")
-    st.info("Estructura Clave-Valor lista para conectar. Añadan sus funciones en un script independiente e impórtenlas aquí de la misma forma.")
-    st.subheader("Ejemplo de Estructura de Datos:")
-    st.json({"caballo:id:100": "nombre_caballo", "caballo:id:100:tiempo_record": "82.10"})
+    mostrar_redis(redis_db)
 
 with tab_cassandra:
     st.header("Consultas en Apache Cassandra")
