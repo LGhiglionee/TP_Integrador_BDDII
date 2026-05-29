@@ -161,7 +161,7 @@ def expirarDatosCarrera(redis_db, idCarrera):
 
     idCarrera = str(idCarrera).strip()
 
-    segundos_expiracion = 3600
+    segundos_expiracion = 20
 
     participantes_key = f"carrera:{idCarrera}:participantes"
     ranking_key = f"carrera:{idCarrera}:ranking"

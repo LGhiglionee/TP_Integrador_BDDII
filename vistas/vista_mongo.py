@@ -3,8 +3,8 @@ import io
 import builtins
 from contextlib import redirect_stdout
 
-from mongo.consultas.consultasBasicas import *
-from mongo.consultas.consultasAvanzadas import *
+from motor_mongo.consultas.consultasBasicas import *
+from motor_mongo.consultas.consultasAvanzadas import *
 
 def ejecutar_consulta_y_capturar_output(func, *args, **kwargs):
     f = io.StringIO()
