@@ -25,7 +25,7 @@ def conectarRedis():
 
 def leerDataset(filtros=None, campos=None):
     ruta_script = os.path.dirname(os.path.abspath(__file__))
-    path = os.path.join(ruta_script, "..", "datasets", "result-horse.csv")
+    path = os.path.join(ruta_script, "..", "datasets", "race-result-horse.csv")
 
     filtros = filtros or {}
 

@@ -6,8 +6,45 @@ from motor_redis.conectarRedis import conectarRedis
 from vistas.vista_redis import mostrar_redis
 
 # Configuración de la página web
-st.set_page_config(page_title="Dashboard Multimotor", layout="wide")
-st.title("Trabajo Práctico Integrador - EQUIDATA")
+st.set_page_config(
+    page_title="Dashboard Multimotor - EQUIDATA", 
+    page_icon="vistas/logo.png",  # <-- Asegúrate de poner la ruta correcta a tu logo
+    layout="wide"
+)
+
+st.markdown("""
+    <style>
+
+        /* Hace que el texto de cada pestaña sea más grande y legible */
+        div[data-testid="stTabs"] button p {
+            font-size: 20px !important;
+            font-weight: 600 !important;
+        }
+        
+        /* Fuerza a la barra contenedora a usar el 100% del ancho de la pantalla */
+        div[data-testid="stTabs"] [role="tablist"] {
+            display: flex !important;
+            justify-content: space-between !important;
+            width: 100% !important;
+            gap: 12px !important;
+        }
+        
+        /* Distribuye las pestañas de forma equitativa y les da aire arriba/abajo */
+        div[data-testid="stTabs"] button {
+            flex-grow: 1 !important;
+            text-align: center !important;
+            padding: 14px 0px !important;
+        }
+    </style>
+""", unsafe_allow_html=True)
+
+col_logo, col_titulo = st.columns([1, 15], vertical_alignment="center")
+
+with col_logo:
+    st.image("vistas/logo.png", width=100)
+
+with col_titulo:
+    st.title("Trabajo Práctico Integrador - EQUIDATA")
 
 # Inicializar la conexión a Mongo una sola vez (evita reconexiones molestas en entorno web)
 @st.cache_resource
