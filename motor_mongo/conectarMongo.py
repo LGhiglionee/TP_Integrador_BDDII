@@ -33,7 +33,9 @@ def ImportarDataset(collection):
             lector = csv.DictReader(archivo, delimiter=';')
             documentos = []
             for fila in lector:
-                if fila.get('finish_time_seconds'): fila['finish_time_seconds'] = float(fila['finish_time_seconds'])
+                if fila.get('finish_time_seconds'): 
+                    valor_limpio = fila['finish_time_seconds'].replace(',', '.')
+                    fila['finish_time_seconds'] = float(valor_limpio)                
                 if fila.get('finishing_position'): fila['finishing_position'] = int(fila['finishing_position'])
                 if fila.get('actual_weight'): fila['actual_weight'] = int(fila['actual_weight'])
                 if fila.get('horse_number'): fila['horse_number'] = int(fila['horse_number'])
