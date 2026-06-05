@@ -102,8 +102,6 @@ def mostrar_mongo (collection):
                 consulta_limpia = f"historial_{nombre_caballo.replace(' ', '_').lower()}"
             else:
                 consulta_limpia = opcion.split(". ", 1)[-1].replace(" ", "_").lower()
-            
-            # Armamos el string final tal cual lo pediste
             nombre_final_archivo = f"resultado_{consulta_limpia}_mongo.txt"
             
             # Botón de descarga con el nombre dinámico

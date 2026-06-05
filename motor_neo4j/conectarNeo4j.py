@@ -2,7 +2,7 @@ import csv
 import os
 from neo4j import GraphDatabase
 
-uri = "bolt://localhost:7687"
+uri = "bolt://127.0.0.1:7687"
 user = 'neo4j'
 password = 'cursusNeo4j'
 
@@ -22,6 +22,7 @@ def ConectarNeo4j(uri, user, password, base_datos="neo4j"):
             print("Base de datos vacía. Iniciando importación...")
             ImportarDataset(driver, base_datos)
         else:
+            
             print(f"La base de datos '{base_datos}' ya contiene datos. Saltando importación.")
 
         return driver
@@ -33,28 +34,28 @@ def ConectarNeo4j(uri, user, password, base_datos="neo4j"):
 def ImportarDataset(driver, base_datos):
     try:
         ruta_script = os.path.dirname(os.path.abspath(__file__))
-        path = os.path.join(ruta_script, "..", "datasets", "horses_2020.csv")
+        path = os.path.join(ruta_script, "..", "datasets", "race-result-horse.csv")
         
-        with open(path, 'r', encoding='utf-8-sig') as archivo:
-            lector = csv.DictReader(archivo, delimiter=',')
+        with open(path, 'r', encoding='UTF-8') as archivo:
+            lector = csv.DictReader(archivo, delimiter=';')
             documentos = []
             
             for fila in lector:
                 # 1. Si la fila no tiene nombre de caballo (ej. línea en blanco al final del CSV), la ignoramos
-                if not fila.get('horseName') or str(fila['horseName']).strip() == "":
+                if not fila.get('horse_name') or str(fila['horse_name']).strip() == "":
                     continue
                 
                 # 2. Casteo de posición seguro
-                if fila.get('position') and str(fila['position']).isdigit():
-                    fila['position'] = int(fila['position'])
+                if fila.get('finishing_position') and str(fila['finishing_position']).isdigit():
+                    fila['finishing_position'] = int(fila['finishing_position'])
                 else:
-                    fila['position'] = 0 # Valor por si la posición viene vacía o no es un número
+                    fila['finishing_position'] = 0 # Valor por si la posición viene vacía o no es un número
 
                 # 3. Limpieza de relaciones para evitar los 'null'
                 # Si viene vacío, le asignamos "Desconocido"
                 fila['father'] = fila.get('father', '').strip() or "Desconocido"
                 fila['mother'] = fila.get('mother', '').strip() or "Desconocida"
-                fila['trainerName'] = fila.get('trainerName', '').strip() or "Desconocido"
+                fila['trainer'] = fila.get('trainer', '').strip() or "Desconocido"
                 
                 documentos.append(fila)
 
@@ -63,8 +64,8 @@ def ImportarDataset(driver, base_datos):
                 query = """
                 UNWIND $batch AS fila
 
-                MERGE (caballo:Caballo {nombre: fila.horseName})
-                SET caballo.posicion = fila.position
+                MERGE (caballo:Caballo {nombre: fila.horse_name})
+                SET caballo.posicion = fila.finishing_position
 
                 MERGE (padre:Caballo {nombre: fila.father})
                 MERGE (caballo)-[:HIJO_DE]->(padre)
@@ -75,14 +76,14 @@ def ImportarDataset(driver, base_datos):
                 MERGE (abuelo:Caballo {nombre: fila.gfather})
                 MERGE (caballo)-[:NIETO_DE]->(abuelo)
 
-                MERGE (entrenador:Entrenador {nombre: fila.trainerName})
+                MERGE (entrenador:Entrenador {nombre: fila.trainer})
                 MERGE (caballo)-[:ENTRENADO_POR]->(entrenador)
                 """
                 tamaño_lote = 5000
                 total_procesados = 0
                 total_documentos = len(documentos)
                 
-                print(f"Comenzando inserción de {total_documentos} registros en lotes de {tamaño_lote}...")
+                print(f"Comenzando inserción de {total_documentos} registros...")
 
                 with driver.session(database=base_datos) as session:
                     # Recorremos la lista de documentos saltando de a 5000

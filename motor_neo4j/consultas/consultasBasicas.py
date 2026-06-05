@@ -1,4 +1,4 @@
-# 1. El método que vas a llamar desde tu programa principal
+'''# 1. El método que vas a llamar desde tu programa principal
 def consultar_caballo(self, nombre_caballo, base_datos="cursus"):
     # Usamos 'with' para asegurar que la sesión se cierre sola
     with self.driver.session(database=base_datos) as session:
@@ -29,4 +29,4 @@ def _ejecutar_consulta_caballo(tx, nombre):
         
     return datos_formateados
 
-consultar_caballo('Waterproof')
+consultar_caballo('Waterproof')'''

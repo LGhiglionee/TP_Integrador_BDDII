@@ -4,11 +4,13 @@ from motor_mongo.conectarMongo import ConectarMongo
 from vistas.vista_mongo import mostrar_mongo
 from motor_redis.conectarRedis import conectarRedis
 from vistas.vista_redis import mostrar_redis
+from motor_neo4j.conectarNeo4j import ConectarNeo4j, uri, user, password
+from vistas.vista_neo4j import mostrar_neo4j
 
 # Configuración de la página web
 st.set_page_config(
     page_title="Dashboard Multimotor - EQUIDATA", 
-    page_icon="vistas/logo.png",  # <-- Asegúrate de poner la ruta correcta a tu logo
+    page_icon="vistas/logo.png",
     layout="wide"
 )
 
@@ -51,11 +53,17 @@ with col_titulo:
 def obtener_coleccion_mongo():
     return ConectarMongo("Cursus", "InfoHorses")
 
+@st.cache_resource
 def obtener_conexion_redis():
     return conectarRedis()
 
+@st.cache_resource
+def obtener_conexion_neo4j():
+    return ConectarNeo4j(uri, user, password)
+
 colleccion_mongo = obtener_coleccion_mongo()
 redis_db = obtener_conexion_redis()
+neo4j_driver = obtener_conexion_neo4j()
 
 # Sistema de pestañas
 tab_mongo, tab_redis, tab_cassandra, tab_neo4j = st.tabs([
@@ -73,8 +81,7 @@ with tab_redis:
 
 with tab_cassandra:
     st.header("Consultas en Apache Cassandra")
-    st.info("Estructura Columnar (CQL) lista para integración.")
+    st.info("Estructura Columnar (CQL).")
 
 with tab_neo4j:
-    st.header("Consultas en Neo4j")
-    st.info("Consultas de Grafos (Cypher) listas para integración de relaciones (Entrenador -> Corre -> Carrera).")
+    mostrar_neo4j(neo4j_driver)
