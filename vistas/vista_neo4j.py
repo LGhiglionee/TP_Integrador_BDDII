@@ -83,7 +83,7 @@ def mostrar_neo4j(driver):
                         elif opcion.startswith("5."): 
                             output_resultado = ejecutar_consulta_y_capturar_output(caballos_con_dragon, session)
 
-                    elif categoria == "Avanzadas con Parámetro" and opcion:
+                    elif categoria == "Avanzadas" and opcion:
                         if not parametro:
                             st.warning("Por favor, ingrese un parámetro válido.")
                         else:
