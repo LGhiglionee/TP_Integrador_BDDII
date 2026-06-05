@@ -56,7 +56,7 @@ def mostrar_redis(redis_db):
                     ]
                 )
         
-            id_carrera = st.text_input("ID de la Carrera:", value="", placeholder="Ej: CARRERA_01")        
+            id_carrera = st.text_input("ID de la Carrera:", value="", placeholder="Ej: 2016-567")        
             
             cant_apuestas = None
             if "Básicas" in categoria and opcion and opcion.startswith("2."):
