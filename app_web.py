@@ -66,11 +66,11 @@ redis_db = obtener_conexion_redis()
 neo4j_driver = obtener_conexion_neo4j()
 
 # Sistema de pestañas
-tab_mongo, tab_redis, tab_cassandra, tab_neo4j = st.tabs([
-    "MongoDB (Documental)", 
-    "Redis (Clave-Valor)", 
-    "Cassandra (Columnar)", 
-    "Neo4j (Grafos)"
+tab_cassandra, tab_mongo, tab_neo4j, tab_redis = st.tabs([
+    "Cassandra (Columnar)",
+    "MongoDB (Documental)",
+    "Neo4j (Grafos)", 
+    "Redis (Clave-Valor)"
 ])
 
 with tab_mongo:

@@ -30,3 +30,6 @@ def _ejecutar_consulta_caballo(tx, nombre):
     return datos_formateados
 
 consultar_caballo('Waterproof')'''
+
+
+#1. 
