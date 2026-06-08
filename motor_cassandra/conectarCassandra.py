@@ -1,52 +1,49 @@
 import csv
-import os
-from cassandra.cluster import Cluster
 
+def convertir_valor(valor, tipo):
+    if valor == "" or valor is None:
+        return None
 
-def conectarCassandra():
+    if tipo == "int":
+        return int(valor)
+
+    if tipo == "float":
+        return float(valor.replace(",", "."))
+
+    return valor
+
+def ImportarDatasetCassandra(session, path_csv, tabla, columnas, tipos_columnas):
     try:
-        cluster = Cluster(['127.0.0.1'], port=9042)
-        session = cluster.connect()
+        with open(path_csv, "r", encoding="UTF-8") as archivo:
+            lector = csv.DictReader(archivo, delimiter=";")
 
-        session.execute("""
-            CREATE KEYSPACE IF NOT EXISTS cursus
-            WITH replication = {'class': 'SimpleStrategy', 'replication_factor': 1}
-        """)
+            columnas_sql = ", ".join(columnas)
+            placeholders = ", ".join(["?"] * len(columnas))
 
-        session.set_keyspace('cursus')
+            query = f"""
+                INSERT INTO {tabla} ({columnas_sql})
+                VALUES ({placeholders})
+            """
 
-        print("Conexión exitosa con Cassandra.")
+            insert_preparado = session.prepare(query)
 
-        return session
+            cantidad = 0
+
+            for fila in lector:
+                valores = []
+
+                for columna in columnas:
+                    tipo = tipos_columnas.get(columna, "text")
+                    valor = convertir_valor(fila.get(columna), tipo)
+                    valores.append(valor)
+
+                session.execute(insert_preparado, valores)
+                cantidad += 1
+
+            print(f"Se insertaron {cantidad} registros en {tabla}.")
+
+    except FileNotFoundError:
+        print("No se encontró el archivo CSV.")
 
     except Exception as e:
-        print(f"Se produjo un error al conectar con Cassandra: {e}")
-
-
-def leerDataset(filtros=None, campos=None):
-    ruta_script = os.path.dirname(os.path.abspath(__file__))
-    path = os.path.join(ruta_script, "..", "datasets", "race-result-horse.csv")
-
-    filtros = filtros or {}
-
-    with open(path, "r", encoding="UTF-8") as archivo:
-        lector = csv.DictReader(archivo, delimiter=";")
-
-        for fila in lector:
-            cumple_filtros = all(
-                fila.get(campo) == str(valor)
-                for campo, valor in filtros.items()
-            )
-
-            if cumple_filtros:
-                if campos is None:
-                    yield fila
-                else:
-                    yield {
-                        campo: fila.get(campo, "")
-                        for campo in campos
-                    }
-
-
-if __name__ == "__main__":
-    conectarCassandra()
+        print(f"Error al importar dataset: {e}")
