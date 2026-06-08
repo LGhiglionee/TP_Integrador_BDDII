@@ -1,36 +1,3 @@
-'''# 1. El método que vas a llamar desde tu programa principal
-def consultar_caballo(self, nombre_caballo, base_datos="cursus"):
-    # Usamos 'with' para asegurar que la sesión se cierre sola
-    with self.driver.session(database=base_datos) as session:
-        # execute_read es ideal porque si hay un micro-corte de red, reintenta automáticamente
-        resultado = session.execute_read(self._ejecutar_consulta_caballo, nombre_caballo)
-        return resultado
-
-# 2. El método interno que ejecuta el Cypher (nota el @staticmethod)
-@staticmethod
-def _ejecutar_consulta_caballo(tx, nombre):
-    # Escribimos el Cypher usando $parametro
-    query = """
-    MATCH (c:Caballo {nombre: $nombre})
-    RETURN c.nombre AS nombre, c.posicion AS posicion
-    """
-    
-    # tx.run ejecuta la consulta pasándole las variables
-    result = tx.run(query, nombre=nombre)
-    
-    # Procesamos los registros (records) que nos devuelve Neo4j
-    # y los armamos en una lista de diccionarios de Python
-    datos_formateados = []
-    for record in result:
-        datos_formateados.append({
-            "caballo": record["nombre"],
-            "posicion_final": record["posicion"]
-        })
-        
-    return datos_formateados
-
-consultar_caballo('Waterproof')'''
-
 # 1. Listar todos los entrenadores únicos registrados
 def listar_todos_entrenadores(session):
     try:
@@ -57,8 +24,8 @@ def listar_todos_entrenadores(session):
 def caballos_ganadores(session):
     try:
         query = """
-        MATCH (c:Caballo)
-        WHERE c.posicion = 1
+        MATCH (c:Caballo)-[r:CORRIO]->(:Carrera)
+        WHERE r.posicion = 1
         RETURN DISTINCT c.nombre AS nombre
         """
         resultados = list(session.run(query))

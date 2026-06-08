@@ -60,25 +60,33 @@ def ImportarDataset(driver, base_datos):
                 documentos.append(fila)
 
             if documentos:
-                # Consulta Cypher parametrizada corregida
                 query = """
                 UNWIND $batch AS fila
 
-                MERGE (caballo:Caballo {nombre: fila.horse_name})
-                SET caballo.posicion = fila.finishing_position
+                MERGE (c:Caballo {id: fila.horse_id})
+                SET c.nombre = fila.horse_name
 
-                MERGE (padre:Caballo {nombre: fila.father})
-                MERGE (caballo)-[:HIJO_DE]->(padre)
+                MERGE (race:Carrera {id: fila.race_id})
 
-                MERGE (madre:Caballo {nombre: fila.mother})
-                MERGE (caballo)-[:HIJO_DE]->(madre)
+                MERGE (e:Entrenador {nombre: fila.trainer})
 
-                MERGE (abuelo:Caballo {nombre: fila.gfather})
-                MERGE (caballo)-[:NIETO_DE]->(abuelo)
+                MERGE (c)-[r:CORRIO]->(race)
+                SET r.posicion = fila.finishing_position
 
-                MERGE (entrenador:Entrenador {nombre: fila.trainer})
-                MERGE (caballo)-[:ENTRENADO_POR]->(entrenador)
+                // 3. Linaje
+                MERGE (p:Caballo {nombre: fila.father})
+                MERGE (c)-[:HIJO_DE]->(p)
+
+                MERGE (m:Caballo {nombre: fila.mother})
+                MERGE (c)-[:HIJO_DE]->(m)
+
+                MERGE (ab:Caballo {nombre: fila.gfather})
+                MERGE (c)-[:NIETO_DE]->(ab)
+
+                // 4. Entrenamiento
+                MERGE (c)-[:ENTRENADO_POR]->(e)
                 """
+
                 tamaño_lote = 5000
                 total_procesados = 0
                 total_documentos = len(documentos)

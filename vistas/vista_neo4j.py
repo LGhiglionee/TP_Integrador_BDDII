@@ -56,11 +56,15 @@ def mostrar_neo4j(driver):
                         "2. Recomendación de Entrenador (Matchmaking por hermanos)",
                         "3. Buscar Caballos Similares (Patrón de Diamante)",
                         "4. Recomendación de Apuestas por Éxito Genético",
-                        "5. Ficha Genealógica Estructurada (Línea de Sangre)"                    
+                        "5. Ficha Genealógica Estructurada (Línea de Sangre)",
+                        "6. Ranking de entrenadores por linaje"                
                         ]
                 )
                 st.info("Esta consulta requiere un parámetro de búsqueda.")
-                parametro = st.text_input("Ingresar parámetro (Nombre del Caballo):", value="").upper().strip()
+                if opcion == "6. Ranking de entrenadores por linaje":
+                    parametro = st.text_input("Ingresar Nombre del Padre:", value="").upper().strip()
+                else:
+                    parametro = st.text_input("Ingresar Nombre del Caballo:", value="").upper().strip()
                 ejecutar = st.button("Ejecutar Búsqueda", use_container_width=True, type="primary")
 
     with col2:
@@ -100,6 +104,8 @@ def mostrar_neo4j(driver):
                                 output_resultado = ejecutar_consulta_y_capturar_output(recomendacion_apuestas_linaje, session)
                             elif opcion.startswith("5."):
                                 output_resultado = ejecutar_consulta_y_capturar_output(linea_sangre_caballo, session)
+                            elif opcion.startswith("6."): 
+                                output_resultado = ejecutar_consulta_y_capturar_output(ranking_entrenadores_por_linaje, session)
                                 
                             builtins.input = input_original
 

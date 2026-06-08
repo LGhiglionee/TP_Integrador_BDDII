@@ -1,28 +1,11 @@
-### 1. Sistema de Recomendación de Entrenadores (Matchmaking)
-
-'''La lógica: Imaginate que comprás un caballo nuevo que es hijo de "Padre_X". No sabés con quién mandarlo a entrenar. El sistema podría buscar a todos los demás caballos que también sean hijos de "Padre_X" y ver qué entrenador se repite más entre ellos.
-El resultado: "Te recomendamos el entrenador Y, porque tiene mucha experiencia entrenando a otros hijos de la misma familia de tu caballo".'''
-
-
-### 2. Sistema de "Caballos Similares" (Para apuestas o compra)
-
-'''La lógica: Si a un usuario le gusta mucho un caballo en particular por su rendimiento, el sistema de recomendación podría sugerirle caballos "similares".
-¿Cómo se define "similar" en grafos?: Un caballo es similar a otro si, por ejemplo, comparten el mismo abuelo Y además tienen el mismo entrenador. En un grafo, esto es simplemente buscar un patrón de "forma de diamante" entre los nodos.'''
-
-
-### 3. Recomendación basada en "Éxito" Genético
-
-'''La lógica: Como en los nodos de caballos guardaste la propiedad posicion (la posición final en la que salieron), podrías armar un motor de recomendación de apuestas.
-El resultado: El sistema busca aquellos linajes (padres o abuelos) donde la mayoría de sus hijos terminaron en posicion = 1. Luego, te recomienda apostar por otros caballos de esa misma familia, asumiendo que "la velocidad viene de familia".'''
-
 # 1. Buscar posición de un caballo específico
 def buscar_caballo_nombre(session):
     try:
         nombre = input("Ingresar nombre del caballo: ").upper().strip()
         
         query = """
-        MATCH (c:Caballo {nombre: $nombre_caballo})
-        RETURN c.nombre AS nombre, c.posicion AS posicion
+        MATCH (c:Caballo {nombre: $nombre_caballo})-[r:CORRIO]->(race:Carrera)
+        RETURN c.nombre AS nombre, r.posicion AS posicion, race.id AS carrera_id
         """
         resultados = list(session.run(query, nombre_caballo=nombre))
         
@@ -30,8 +13,8 @@ def buscar_caballo_nombre(session):
             print(f"No se encontraron registros para el caballo: {nombre}")
         else:
             print(f"=== HISTORIAL DE POSICIÓN ===")
-            for caballo in resultados:
-                print(f"Caballo: {caballo['nombre']} | Última Posición registrada: {caballo['posicion']}")
+            for r in resultados:
+                print(f"Caballo: {r['nombre']} | Carrera: {r['carrera_id']} | Posición: {r['posicion']}")
                 
     except Exception as e:
         print(f"Error en la consulta avanzada: {e}")
@@ -105,11 +88,11 @@ def recomendacion_apuestas_linaje(session):
         # Buscamos el padre del caballo, cuántas victorias (posicion = 1) tienen sus hijos, y sugerimos otros parientes no ganadores
         query = """
         MATCH (c:Caballo {nombre: $nombre_caballo})-[:HIJO_DE]->(padre:Caballo)
-        MATCH (padre)<-[:HIJO_DE]-(hijo_ganador:Caballo {posicion: 1})
+        MATCH (padre)<-[:HIJO_DE]-(hijo_ganador:Caballo)-[r:CORRIO]->(:Carrera)
+        WHERE r.posicion = 1
         WITH padre, count(hijo_ganador) AS victorias
-        WHERE victorias >= 1
-        MATCH (padre)<-[:HIJO_DE]-(caballo_sugerido:Caballo)
-        WHERE caballo_sugerido.posicion <> 1
+        MATCH (padre)<-[:HIJO_DE]-(caballo_sugerido:Caballo)-[r2:CORRIO]->(:Carrera)
+        WHERE r2.posicion <> 1
         RETURN DISTINCT caballo_sugerido.nombre AS sugerido, padre.nombre AS padre, victorias
         LIMIT 3
         """
@@ -132,25 +115,56 @@ def recomendacion_apuestas_linaje(session):
 # 5. Ficha Genealógica Estructurada (Línea de Sangre)
 def linea_sangre_caballo(session):
     try:
-        nombre = input("Ingresar nombre del caballo para su árbol genealógico: ").upper().strip()
-        
+
+        nombre = input("Ingresar nombre de un caballo: ").upper().strip()
+
         query = """
-        MATCH (c:Caballo {nombre: $nombre_caballo})-[:HIJO_DE]->(progenitor:Caballo)
-        MATCH (c)-[:NIETO_DE]->(abuelo:Caballo)
-        WHERE progenitor.nombre <> 'Desconocido' AND abuelo.nombre <> 'Desconocido'
-        RETURN c.nombre AS analizado, c.posicion AS pos, collect(DISTINCT progenitor.nombre) AS padres, abuelo.nombre AS abuelo
+        MATCH (c:Caballo {nombre: $nombre_caballo})
+        OPTIONAL MATCH (c)-[:HIJO_DE]->(progenitor:Caballo)
+        OPTIONAL MATCH (c)-[:NIETO_DE]->(abuelo:Caballo)
+        OPTIONAL MATCH (c)-[r:CORRIO]->(:Carrera)
+        RETURN c.nombre AS analizado, collect(DISTINCT r.posicion) AS posiciones, collect(DISTINCT progenitor.nombre) AS padres, collect(DISTINCT abuelo.nombre) AS abuelos
         """
         resultados = list(session.run(query, nombre_caballo=nombre))
         
         if not resultados:
-            print(f"No se pudo estructurar el árbol genealógico completo para: {nombre}")
+            print(f"No se encontró información para: {nombre}")
         else:
-            print(f"=== ANÁLISIS DE ÁRBOL GENEALÓGICO DE GRAFOS ===")
+            print(f"=== ANÁLISIS DE ÁRBOL GENEALÓGICO ===")
             for r in resultados:
                 print(f"Ficha Técnica: {r['analizado']}")
-                print(f"Último puesto en competencia: {r['pos']}")
-                print(f"Padres Directos (Relación HIJO_DE): {', '.join(r['padres'])}")
-                print(f"Abuelo Registrado (Relación NIETO_DE): {r['abuelo']}")
+                # Mostramos la lista de posiciones recolectadas
+                print(f"Posiciones obtenidas: {', '.join(map(str, r['posiciones']))}")
+                print(f"Padres: {', '.join(r['padres'])}")
+                print(f"Abuelos: {', '.join(r['abuelos'])}")
                 
     except Exception as e:
-        print(f"Error en la consulta avanzada: {e}")
+        print(f"Error en la consulta: {e}")
+
+#6. Promedio de posiciones por entrenadores de hijos de un caballo padre dado
+
+def ranking_entrenadores_por_linaje(session):
+    try:
+        nombre_padre = input("Ingresar nombre del padre para el ranking: ").upper().strip()
+        
+        query = """
+        MATCH (padre:Caballo {nombre: $nombre_padre})<-[:HIJO_DE]-(hijo:Caballo)
+        MATCH (hijo)-[r:CORRIO]->(:Carrera)
+        MATCH (hijo)-[:ENTRENADO_POR]->(e:Entrenador)
+        WHERE e.nombre <> 'Desconocido'
+        WITH e, avg(r.posicion) AS promedio_posicion, count(DISTINCT(hijo)) AS cantidad_caballos
+        RETURN e.nombre AS entrenador, promedio_posicion, cantidad_caballos
+        ORDER BY promedio_posicion ASC
+        """
+        
+        resultados = list(session.run(query, nombre_padre=nombre_padre))
+        
+        if not resultados:
+            print(f"No hay registros suficientes para '{nombre_padre}'.")
+        else:
+            print(f"=== RANKING: ¿Quién entrena mejor a los hijos de '{nombre_padre}'? ===")
+            for r in resultados:
+                print(f"Entrenador: {r['entrenador']} | Promedio de llegada: {r['promedio_posicion']:.2f} | Caballos analizados: {r['cantidad_caballos']}")
+                
+    except Exception as e:
+        print(f"Error: {e}")
