@@ -78,13 +78,11 @@ def mostrar_mongo(collection):
         with st.container(border=True):
             st.markdown("### Panel de Control")
             
-            modo_operacion = st.radio("Modo de Operación", ["Modificar datos", "Consultas/Simulación"], horizontal=True)
-            st.divider()
-
-            if modo_operacion == "Modificar datos":
-                categoria1 = st.radio("Operación CRUD", ["Insercion", "Actualizacion", "Borrado"])
+            modo_operacion = st.radio("Modo de Operación", ["Modificar Datos", "Consultas/Simulación"], horizontal=True)
+            if modo_operacion == "Modificar Datos":
+                categoria1 = st.radio("Operación CRUD", ["Inserción", "Actualización", "Borrado"])
                 
-                if categoria1 == "Insercion":
+                if categoria1 == "Inserción":
                     with st.form("form_insercion"):
                         st.markdown("**Datos Principales**")
                         
@@ -149,7 +147,7 @@ def mostrar_mongo(collection):
                                     mensaje_crud = "Error inesperado al procesar los datos."
                                     tipo_mensaje = "warning"
 
-                elif categoria1 == "Actualizacion":
+                elif categoria1 == "Actualización":
                     with st.form("form_actualizacion"):
                         st.markdown("**1. Buscar Registro Exacto:**")
                         colBusqA, colBusqB = st.columns(2)
@@ -332,4 +330,4 @@ def mostrar_mongo(collection):
             )
             st.code(output_resultado, language="text")
         elif not mensaje_crud and tipo_mensaje != "errores_multiples":
-            st.info("Seleccioná una operación del panel izquierdo para visualizar los datos aquí.")
+            st.info("Seleccione una operación del panel izquierdo para visualizar los datos aquí.")

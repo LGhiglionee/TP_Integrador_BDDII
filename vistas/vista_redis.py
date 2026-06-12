@@ -36,9 +36,7 @@ def mostrar_redis(redis_db):
         with st.container(border=True):
             st.markdown("### Panel de Control")
 
-            modo_operacion = st.radio("Modo de Operación",["Modificar datos","Consultas/Simulación"],horizontal=True,key="modo_operacion_redis")
-            st.divider()
-
+            modo_operacion = st.radio("Modo de Operación",["Modificar Datos","Consultas/Simulación"],horizontal=True,key="modo_operacion_redis")
             if modo_operacion == "Consultas/Simulación":
                 categoria = st.radio("Tipo de consulta",["Simples", "Complejas"],key="btn_tipo_consulta_redis")
                 if categoria == "Simples":
@@ -73,8 +71,8 @@ def mostrar_redis(redis_db):
                     )
                     id_carrera = st.text_input("Ingrese ID de la Carrera:", value="", placeholder="Ej: 2016-567",key="id_compleja_redis").strip()
                     ejecutar = st.button("Ejecutar Consulta Compleja", use_container_width=True, type="primary", key="btn_ejecutar_compleja_redis")
-            elif modo_operacion == "Modificar datos":
-                categoria_crud = st.radio("Operación CRUD",["Insercion", "Actualizacion", "Borrado"],key="crud_redis")
+            elif modo_operacion == "Modificar Datos":
+                categoria_crud = st.radio("Operación CRUD",["Inserción", "Actualización", "Borrado"],key="crud_redis")
 
     with col2:
         st.subheader("Consola de Salida")
@@ -114,4 +112,4 @@ def mostrar_redis(redis_db):
             )
             st.code(output_resultado, language="text")
         else:
-            st.info("Selecciona una consulta del panel izquierdo y presiona el botón para visualizar los datos aquí.")
+            st.info("Seleccione una consulta del panel izquierdo y presiona el botón para visualizar los datos aquí.")
