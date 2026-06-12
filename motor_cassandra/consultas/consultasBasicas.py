@@ -66,3 +66,77 @@ def verHistorialCaballo(cassandra_db, idCaballo):
             f"Posición: {fila.posicion_final} | "
             f"Hipódromo: {fila.hipodromo}"
         )
+
+def verHistorialJockey(cassandra_db, idJockey):
+    filas = cassandra_db.execute("""
+        SELECT *
+        FROM historial_por_jockey
+        WHERE id_jockey = %s
+    """, (idJockey,))
+
+    resultados = list(filas)
+
+    if not resultados:
+        print("No se encontró historial para ese jockey.")
+        return
+
+    print(f"\n--- Historial del jockey {idJockey} ---")
+
+    for fila in resultados:
+        print(
+            f"Fecha: {fila.fecha} | "
+            f"Carrera: {fila.id_carrera} | "
+            f"Caballo: {fila.nombre_caballo} | "
+            f"Posición: {fila.posicion_final} | "
+            f"Hipódromo: {fila.hipodromo}"
+        )
+        
+
+def verCarrerasPorFecha(cassandra_db, fecha):
+    filas = cassandra_db.execute("""
+        SELECT *
+        FROM carreras_por_fecha
+        WHERE fecha = %s
+    """, (fecha,))
+
+    resultados = list(filas)
+
+    if not resultados:
+        print("No se encontraron carreras para esa fecha.")
+        return
+
+    print(f"\n--- Carreras del día {fecha} ---")
+
+    for fila in resultados:
+        print(
+            f"Carrera: {fila.id_carrera} | "
+            f"Hipódromo: {fila.hipodromo} | "
+            f"Distancia: {fila.distancia} | "
+            f"Superficie: {fila.superficie} | "
+            f"Participantes: {fila.cantidad_participantes}"
+        )
+        
+        
+def verCarrerasPorHipodromo(cassandra_db, hipodromo):
+    filas = cassandra_db.execute("""
+        SELECT *
+        FROM carreras_por_hipodromo
+        WHERE hipodromo = %s
+    """, (hipodromo,))
+
+    resultados = list(filas)
+
+    if not resultados:
+        print("No se encontraron carreras para ese hipódromo.")
+        return
+
+    print(f"\n--- Carreras en {hipodromo} ---")
+
+    for fila in resultados:
+        print(
+            f"Fecha: {fila.fecha} | "
+            f"Carrera: {fila.id_carrera} | "
+            f"Distancia: {fila.distancia} | "
+            f"Superficie: {fila.superficie} | "
+            f"Participantes: {fila.cantidad_participantes}"
+        )

@@ -72,3 +72,73 @@ def verUltimasCarrerasCaballo(cassandra_db, idCaballo, limite):
             f"Posición: {fila.posicion_final} | "
             f"Hipódromo: {fila.hipodromo}"
         )
+        
+def verUltimasCarrerasJockey(cassandra_db, idJockey, limite):
+    consulta = f"""
+        SELECT *
+        FROM historial_por_jockey
+        WHERE id_jockey = %s
+        LIMIT {int(limite)}
+    """
+
+    filas = cassandra_db.execute(consulta, (idJockey,))
+    resultados = list(filas)
+
+    if not resultados:
+        print("No se encontraron carreras para ese jockey.")
+        return
+
+    print(f"\n--- Últimas {limite} carreras del jockey {idJockey} ---")
+
+    for fila in resultados:
+        print(
+            f"Fecha: {fila.fecha} | "
+            f"Carrera: {fila.id_carrera} | "
+            f"Caballo: {fila.nombre_caballo} | "
+            f"Posición: {fila.posicion_final} | "
+            f"Hipódromo: {fila.hipodromo}"
+        )
+        
+def verRendimientoCaballo(cassandra_db, idCaballo):
+    filas = cassandra_db.execute("""
+        SELECT *
+        FROM historial_por_caballo
+        WHERE id_caballo = %s
+    """, (idCaballo,))
+
+    resultados = list(filas)
+
+    if not resultados:
+        print("No se encontró historial para ese caballo.")
+        return
+
+    total = len(resultados)
+    victorias = sum(1 for fila in resultados if fila.posicion_final == 1)
+    promedio_posicion = sum(fila.posicion_final for fila in resultados) / total
+
+    print(f"\n--- Rendimiento del caballo {idCaballo} ---")
+    print(f"Carreras corridas: {total}")
+    print(f"Victorias: {victorias}")
+    print(f"Promedio de posición final: {promedio_posicion:.2f}")
+    
+def verRendimientoJockey(cassandra_db, idJockey):
+    filas = cassandra_db.execute("""
+        SELECT *
+        FROM historial_por_jockey
+        WHERE id_jockey = %s
+    """, (idJockey,))
+
+    resultados = list(filas)
+
+    if not resultados:
+        print("No se encontró historial para ese jockey.")
+        return
+
+    total = len(resultados)
+    victorias = sum(1 for fila in resultados if fila.posicion_final == 1)
+    promedio_posicion = sum(fila.posicion_final for fila in resultados) / total
+
+    print(f"\n--- Rendimiento del jockey {idJockey} ---")
+    print(f"Carreras corridas: {total}")
+    print(f"Victorias: {victorias}")
+    print(f"Promedio de posición final: {promedio_posicion:.2f}")
