@@ -54,18 +54,22 @@ def recomendacion_entrenador_matchmaking(session):
 def caballos_similares_diamante(session):
     try:
         nombre = input("Ingresar nombre del caballo para buscar similares: ").upper().strip()
-        
-        # Un caballo es similar a otro si comparten el mismo abuelo e indicador de entrenador (Cierra el Diamante)
+
+        # Filtramos 'Desconocido' al inicio para que no haga combinaciones infinitas
         query = """
-        MATCH (c1:Caballo {nombre: $nombre_caballo})-[:NIETO_DE]->(abuelo:Caballo),
-              (c1)-[:ENTRENADO_POR]->(e:Entrenador),
-              (c2:Caballo)-[:NIETO_DE]->(abuelo),
-              (c2)-[:ENTRENADO_POR]->(e)
+        MATCH (c1:Caballo {nombre: $nombre_caballo})-[:NIETO_DE]->(abuelo:Caballo)
+        MATCH (c1)-[:ENTRENADO_POR]->(e:Entrenador)
+        WHERE abuelo.nombre <> 'Desconocido' AND e.nombre <> 'Desconocido'
+        
+        # Una vez acotado c1, abuelo y entrenador, buscamos c2
+        MATCH (c2:Caballo)-[:NIETO_DE]->(abuelo)
+        MATCH (c2)-[:ENTRENADO_POR]->(e)
         WHERE c1 <> c2 AND c2.nombre <> 'Desconocido'
+        
         RETURN DISTINCT c2.nombre AS similar, abuelo.nombre AS abuelo, e.nombre AS entrenador
         """
         resultados = list(session.run(query, nombre_caballo=nombre))
-        
+
         if not resultados:
             print(f"No se encontraron patrones de diamante o caballos similares para: {nombre}")
         else:
@@ -75,7 +79,7 @@ def caballos_similares_diamante(session):
                 print(f"- Caballo: {r['similar']}")
                 print(f"  * Comparten el abuelo: {r['abuelo']}")
                 print(f"  * Comparten el mismo entrenador: {r['entrenador']}\n")
-                
+
     except Exception as e:
         print(f"Error en la consulta avanzada: {e}")
 
@@ -84,20 +88,28 @@ def caballos_similares_diamante(session):
 def recomendacion_apuestas_linaje(session):
     try:
         nombre = input("Ingresar nombre de un caballo para validar linaje: ").upper().strip()
-        
-        # Buscamos el padre del caballo, cuántas victorias (posicion = 1) tienen sus hijos, y sugerimos otros parientes no ganadores
+
+        # Cambiamos el MATCH abierto de r2 por un EXISTS {} que chequea sin duplicar filas
         query = """
         MATCH (c:Caballo {nombre: $nombre_caballo})-[:HIJO_DE]->(padre:Caballo)
+        WHERE padre.nombre <> 'Desconocido'
+        
         MATCH (padre)<-[:HIJO_DE]-(hijo_ganador:Caballo)-[r:CORRIO]->(:Carrera)
         WHERE r.posicion = 1
-        WITH padre, count(hijo_ganador) AS victorias
-        MATCH (padre)<-[:HIJO_DE]-(caballo_sugerido:Caballo)-[r2:CORRIO]->(:Carrera)
-        WHERE r2.posicion <> 1
+        WITH padre, count(DISTINCT hijo_ganador) AS victorias, c
+        
+        MATCH (padre)<-[:HIJO_DE]-(caballo_sugerido:Caballo)
+        WHERE caballo_sugerido <> c AND caballo_sugerido.nombre <> 'Desconocido'
+          AND EXISTS {
+              MATCH (caballo_sugerido)-[r2:CORRIO]->(:Carrera)
+              WHERE r2.posicion <> 1
+          }
+        
         RETURN DISTINCT caballo_sugerido.nombre AS sugerido, padre.nombre AS padre, victorias
         LIMIT 3
         """
         resultados = list(session.run(query, nombre_caballo=nombre))
-        
+
         if not resultados:
             print(f"La familia directa de {nombre} no registra un linaje estadísticamente ganador para apuestas.")
         else:
@@ -107,7 +119,7 @@ def recomendacion_apuestas_linaje(session):
                 print(f"- Caballo Sugerido: {r['sugerido']}")
                 print(f"  * Pertenece al linaje exitoso de: {r['padre']}")
                 print(f"  * Victorias de la familia en carreras: {r['victorias']}\n")
-                
+
     except Exception as e:
         print(f"Error en la consulta avanzada: {e}")
 
