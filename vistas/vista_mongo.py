@@ -78,10 +78,10 @@ def mostrar_mongo(collection):
         with st.container(border=True):
             st.markdown("### Panel de Control")
             
-            modo_operacion = st.radio("Modo de Operación", ["CRUD (Modificar Datos)", "Consultas (Leer Datos)"], horizontal=True)
+            modo_operacion = st.radio("Modo de Operación", ["Modificar datos", "Consultas/Simulación"], horizontal=True)
             st.divider()
 
-            if modo_operacion == "CRUD (Modificar Datos)":
+            if modo_operacion == "Modificar datos":
                 categoria1 = st.radio("Operación CRUD", ["Insercion", "Actualizacion", "Borrado"])
                 
                 if categoria1 == "Insercion":
@@ -260,7 +260,7 @@ def mostrar_mongo(collection):
                                     mensaje_crud = "El ID del Caballo es obligatorio."
                                     tipo_mensaje = "warning"
 
-            elif modo_operacion == "Consultas (Leer Datos)":
+            elif modo_operacion == "Consultas/Simulación":
                 categoria2 = st.radio("Tipo de consulta", ["Simples", "Complejas", "Historial por Nombre"])
                 
                 if categoria2 == "Simples":
@@ -292,7 +292,7 @@ def mostrar_mongo(collection):
         # 2. Lógica de Consultas
         if ejecutar_consulta:
             with st.spinner('Buscando en MongoDB...'):
-                if modo_operacion == "Consultas (Leer Datos)":
+                if modo_operacion == "Consultas/Simulación":
                     if categoria2 == "Simples" and opcion:
                         if opcion.startswith("1."): output_resultado = ejecutar_consulta_y_capturar_output(caballosEntrenadosP_F_YIU, collection)
                         elif opcion.startswith("2."): output_resultado = ejecutar_consulta_y_capturar_output(caballosGanadores, collection)
@@ -318,7 +318,7 @@ def mostrar_mongo(collection):
 
         # Renderizado estético del resultado
         if output_resultado:
-            if modo_operacion == "Consultas (Leer Datos)" and categoria2 == "Historial por Nombre":
+            if modo_operacion == "Consultas/Simulación" and categoria2 == "Historial por Nombre":
                 consulta_limpia = f"historial_{nombre_caballo.replace(' ', '_').lower()}"
             else:
                 consulta_limpia = opcion.split(". ", 1)[-1].replace(" ", "_").lower()
