@@ -6,13 +6,20 @@ from contextlib import redirect_stdout
 from motor_neo4j.consultas.consultasBasicas import *
 from motor_neo4j.consultas.consultasAvanzadas import *
 
-def ejecutar_consulta_y_capturar_output(func, *args, **kwargs):
+def ejecutar_consulta_y_capturar_output(func, session, valor_input=None):
     f = io.StringIO()
+    input_original = builtins.input
+
+    if valor_input is not None:
+        builtins.input = lambda *args, **kwargs: valor_input
+
     with redirect_stdout(f):
         try:
-            func(*args, **kwargs)
+            func(session)
         except Exception as e:
             print(f"Error en la ejecución web: {e}")
+        finally:
+            builtins.input = input_original
     return f.getvalue()
 
 def mostrar_neo4j(driver):
@@ -27,45 +34,40 @@ def mostrar_neo4j(driver):
     with col1:
         with st.container(border=True):
             st.markdown("Panel de Control")        
-            categoria = st.radio(
-                "Tipo de consulta", 
-                ["Básicas", "Avanzadas"]
-            )
-        
+            categoria = st.radio("Tipo de consulta", ["Simples", "Complejas",],key="btn_tipo_consulta_neo4j")
+            parametro = None
             opcion = None
-            parametro = ""
-            
-            if categoria == "Básicas":
+            if categoria == "Simples":
                 opcion = st.selectbox(
-                    "Selecciona la consulta básica:",
+                    "Seleccione la consulta simple:",
                     [
-                        "1. Listar todos los entrenadores únicos registrados",
-                        "2. Mostrar todos los caballos ganadores (Posición 1)",
+                        "1. Mostrar todos los entrenadores registrados",
+                        "2. Mostrar todos los caballos ganadores",
                         "3. Contar la cantidad total de caballos en el grafo",
-                        "4. Mostrar entrenadores cuyo nombre empieza con P",
-                        "5. Mostrar caballos que contienen 'DRAGON' en su nombre"
+                        "4. Mostrar entrenadores cuyo nombre empiece con P",
+                        "5. Mostrar los caballos que contengan 'DRAGON' en su nombre"
                     ]
                 )
-                ejecutar = st.button("Ejecutar Consulta", use_container_width=True, type="primary")
+                ejecutar = st.button("Ejecutar Consulta Simple", use_container_width=True, type="primary",key="btn_ejecutar_consulta_s_neo4j")
                 
-            elif categoria == "Avanzadas":
+            elif categoria == "Complejas":
                 opcion = st.selectbox(
-                    "Selecciona la consulta avanzada:",
+                    "Seleccione la consulta compleja:",
                     [
                         "1. Buscar posición de un caballo específico",
-                        "2. Recomendación de Entrenador (Matchmaking por hermanos)",
-                        "3. Buscar Caballos Similares (Patrón de Diamante)",
-                        "4. Recomendación de Apuestas por Éxito Genético",
-                        "5. Ficha Genealógica Estructurada (Línea de Sangre)",
-                        "6. Ranking de entrenadores por linaje"                
+                        "2. Recomendar un entrenador",
+                        "3. Buscar caballos similares (Patrón de Diamante)",
+                        "4. Recomendar apuestas por éxito genético",
+                        "5. Buscar ficha genealógica estructurada (Línea de Sangre)",
+                        "6. Mostrar ranking de entrenadores por linaje"
                         ]
                 )
-                st.info("Esta consulta requiere un parámetro de búsqueda.")
-                if opcion == "6. Ranking de entrenadores por linaje":
+
+                if opcion == "6. Mostrar ranking de entrenadores por linaje":
                     parametro = st.text_input("Ingresar Nombre del Padre:", value="").upper().strip()
                 else:
                     parametro = st.text_input("Ingresar Nombre del Caballo:", value="").upper().strip()
-                ejecutar = st.button("Ejecutar Búsqueda", use_container_width=True, type="primary")
+                ejecutar = st.button("Ejecutar Consulta Compleja", use_container_width=True, type="primary",key="btn_ejecutar_consulta_c_neo4j")
 
     with col2:
         st.subheader("Consola de Salida")
@@ -74,42 +76,31 @@ def mostrar_neo4j(driver):
         if ejecutar:
             with st.spinner('Consultando el grafo en Neo4j...'):
                 with driver.session(database="neo4j") as session:
-                    
-                    if categoria == "Básicas" and opcion:
-                        if opcion.startswith("1."): 
-                            output_resultado = ejecutar_consulta_y_capturar_output(listar_todos_entrenadores, session)
-                        elif opcion.startswith("2."): 
-                            output_resultado = ejecutar_consulta_y_capturar_output(caballos_ganadores, session)
-                        elif opcion.startswith("3."): 
-                            output_resultado = ejecutar_consulta_y_capturar_output(cantidad_total_caballos, session)
-                        elif opcion.startswith("4."): 
-                            output_resultado = ejecutar_consulta_y_capturar_output(entrenadores_letra_p, session)
-                        elif opcion.startswith("5."): 
-                            output_resultado = ejecutar_consulta_y_capturar_output(caballos_con_dragon, session)
+                    if categoria == "Simples" and opcion:
+                        if opcion.startswith("1."): output_resultado = ejecutar_consulta_y_capturar_output(listar_todos_entrenadores, session)
+                        elif opcion.startswith("2."):output_resultado = ejecutar_consulta_y_capturar_output(caballos_ganadores, session)
+                        elif opcion.startswith("3."):output_resultado = ejecutar_consulta_y_capturar_output(cantidad_total_caballos, session)
+                        elif opcion.startswith("4."):output_resultado = ejecutar_consulta_y_capturar_output(entrenadores_letra_p, session)
+                        elif opcion.startswith("5."):output_resultado = ejecutar_consulta_y_capturar_output(caballos_con_dragon, session)
 
-                    elif categoria == "Avanzadas" and opcion:
-                        if not parametro:
-                            st.warning("Por favor, ingrese un parámetro válido.")
-                        else:
-                            input_original = builtins.input
-                            builtins.input = lambda *args: parametro                        
-                            
-                            if opcion.startswith("1."):
-                                output_resultado = ejecutar_consulta_y_capturar_output(buscar_caballo_nombre, session)
-                            elif opcion.startswith("2."):
-                                output_resultado = ejecutar_consulta_y_capturar_output(recomendacion_entrenador_matchmaking, session)
-                            elif opcion.startswith("3."):
-                                output_resultado = ejecutar_consulta_y_capturar_output(caballos_similares_diamante, session)
-                            elif opcion.startswith("4."):
-                                output_resultado = ejecutar_consulta_y_capturar_output(recomendacion_apuestas_linaje, session)
-                            elif opcion.startswith("5."):
-                                output_resultado = ejecutar_consulta_y_capturar_output(linea_sangre_caballo, session)
-                            elif opcion.startswith("6."): 
-                                output_resultado = ejecutar_consulta_y_capturar_output(ranking_entrenadores_por_linaje, session)
-                                
-                            builtins.input = input_original
+                    elif categoria == "Complejas" and opcion:
+                        if opcion.startswith("1."):output_resultado = ejecutar_consulta_y_capturar_output(buscar_caballo_nombre, session)
+                        elif opcion.startswith("2."):output_resultado = ejecutar_consulta_y_capturar_output(recomendacion_entrenador_matchmaking, session)
+                        elif opcion.startswith("3."):output_resultado = ejecutar_consulta_y_capturar_output(caballos_similares_diamante, session)
+                        elif opcion.startswith("4."):output_resultado = ejecutar_consulta_y_capturar_output(recomendacion_apuestas_linaje, session)
+                        elif opcion.startswith("5."):output_resultado = ejecutar_consulta_y_capturar_output(linea_sangre_caballo, session)
+                        elif opcion.startswith("6."):output_resultado = ejecutar_consulta_y_capturar_output(ranking_entrenadores_por_linaje, session)
 
         if output_resultado:
+            accion_limpia = opcion.split(". ", 1)[-1].replace(" ", "_").lower()
+            nombre_final_archivo = f"resultado_{accion_limpia}__neo4j.txt"
+            st.download_button(
+                label="Descargar datos (TXT)",
+                data=output_resultado,
+                file_name=nombre_final_archivo,
+                mime="text/plain",
+                use_container_width=True
+            )
             st.code(output_resultado, language="text")
         else:
             st.info("Selecciona una consulta del panel izquierdo y presiona el botón para visualizar los datos aquí.")
