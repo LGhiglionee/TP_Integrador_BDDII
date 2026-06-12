@@ -4,10 +4,10 @@ import builtins
 from contextlib import redirect_stdout
 
 # Importaciones de tus consultas
-from motor_mongo.consultas.consultasBasicas import *
-from motor_mongo.consultas.consultasAvanzadas import *
+from motor_mongo.consultas.consultasBasicas_mongo import *
+from motor_mongo.consultas.consultasAvanzadas_mongo import *
 
-from motor_mongo.crud.crud import *
+from motor_mongo.crud.crud_mongo import *
 
 # --- FUNCIONES AUXILIARES DE VALIDACIÓN ---
 def ejecutar_consulta_y_capturar_output(func, *args, **kwargs):

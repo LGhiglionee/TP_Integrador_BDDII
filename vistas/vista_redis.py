@@ -2,8 +2,8 @@ import streamlit as st
 import io
 from contextlib import redirect_stdout
 
-from motor_redis.consultas.consultasBasicas import *
-from motor_redis.consultas.consultasAvanzadas import *
+from motor_redis.consultas.consultasBasicas_redis import *
+from motor_redis.consultas.consultasAvanzadas_redis import *
 
 def ejecutar_consulta_y_capturar_output(func, *args, **kwargs):
     f = io.StringIO()

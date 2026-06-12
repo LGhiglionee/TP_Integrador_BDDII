@@ -2,8 +2,8 @@ import streamlit as st
 import io
 import sys
 
-from motor_neo4j.consultas.consultasBasicas import *
-from motor_neo4j.consultas.consultasAvanzadas import *
+from motor_neo4j.consultas.consultasBasicas_neo4j import *
+from motor_neo4j.consultas.consultasAvanzadas_neo4j import *
 
 # MODIFICADO: Ahora es una función inteligente que se adapta a cualquier firma de backend
 def ejecutar_consulta_y_capturar_output(func, session, valor_input=None):

@@ -2,8 +2,8 @@ import streamlit as st
 import io
 from contextlib import redirect_stdout
 
-from motor_cassandra.Consultas.consultasBasicas import *
-from motor_cassandra.Consultas.consultasAvanzadas import *
+from motor_cassandra.consultas.consultasBasicas_cassandra import *
+from motor_cassandra.consultas.consultasAvanzadas_cassandra import *
 
 
 # --- FUNCIÓN AUXILIAR ---
