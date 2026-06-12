@@ -85,7 +85,6 @@ def mostrar_mongo(collection):
                 categoria1 = st.radio("Operación CRUD", ["Insercion", "Actualizacion", "Borrado"])
                 
                 if categoria1 == "Insercion":
-                    st.info("Los campos marcados como 'Obligatorio' son infaltables. El resto podés dejarlos en blanco.")
                     with st.form("form_insercion"):
                         st.markdown("**Datos Principales**")
                         
@@ -118,9 +117,8 @@ def mostrar_mongo(collection):
                         btn_insertar = st.form_submit_button("Insertar Documento", type="primary", use_container_width=True)
                         
                         if btn_insertar:
-                            # ACÁ ESTÁ LA REGLA DE OBLIGATORIEDAD:
                             if not horse_id or not race_id or not horse_name:
-                                mensaje_crud = "⚠️ Error: No podés insertar el registro. El 'ID Caballo', 'ID Carrera' y 'Nombre' son obligatorios."
+                                mensaje_crud = "Error: No podés insertar el registro. El 'ID Caballo', 'ID Carrera' y 'Nombre' son obligatorios."
                                 tipo_mensaje = "error"
                             else:
                                 inputs_crudos = {
@@ -219,10 +217,10 @@ def mostrar_mongo(collection):
                                     tipo_mensaje = "error"
 
                 elif categoria1 == "Borrado":
-                    tipo_borrado = st.radio("Opciones de Eliminación:", ["Eliminar una Carrera ESPECÍFICA", "Eliminar TODAS las carreras de un Caballo"])
+                    tipo_borrado = st.radio("Opciones de Eliminación:", ["Eliminar caballo de una carrera especifica", "Eliminar caballo de todas las carreras"])
                     
                     with st.form("form_borrado"):
-                        if tipo_borrado == "Eliminar una Carrera ESPECÍFICA":
+                        if tipo_borrado == "Eliminar un caballo de una carrera especifica":
                             st.markdown("**Eliminar registro exacto**")
                             colBusqA, colBusqB = st.columns(2)
                             with colBusqA:
@@ -231,14 +229,13 @@ def mostrar_mongo(collection):
                                 race_id_borrar = st.text_input("ID Carrera (Obligatorio):").upper().strip()
                         else:
                             st.markdown("**Eliminar historial completo**")
-                            st.warning("Cuidado: Esto eliminará todas las carreras registradas de este caballo en la base de datos.")
+                            st.warning("Esto eliminará todas las carreras registradas de este caballo en la base de datos.")
                             horse_id_borrar = st.text_input("ID Caballo (Obligatorio):").upper().strip()
-                            race_id_borrar = None # No aplica para este caso
                             
                         btn_borrar = st.form_submit_button("Ejecutar Eliminación", type="primary", use_container_width=True)
                         
                         if btn_borrar:
-                            if tipo_borrado == "Eliminar una Carrera ESPECÍFICA":
+                            if tipo_borrado == "Eliminar una caballo de una carrera especifica":
                                 if horse_id_borrar and race_id_borrar:
                                     resultado = borrar_caballo_carrera_especifica(collection, horse_id_borrar, race_id_borrar)
                                     if resultado.deleted_count > 0:
@@ -286,7 +283,7 @@ def mostrar_mongo(collection):
         if tipo_mensaje == "errores_multiples":
             st.error("Se encontraron errores de validación de datos. Corregilos para continuar:")
             for error in errores_validacion:
-                st.warning(f"⚠️ {error}")
+                st.warning(f"{error}")
         elif mensaje_crud:
             if tipo_mensaje == "success": st.success(mensaje_crud)
             elif tipo_mensaje == "error": st.error(mensaje_crud)
