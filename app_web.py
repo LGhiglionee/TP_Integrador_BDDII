@@ -6,6 +6,8 @@ from motor_redis.conectarRedis import conectarRedis
 from vistas.vista_redis import mostrar_redis
 from motor_neo4j.conectarNeo4j import ConectarNeo4j, uri, user, password
 from vistas.vista_neo4j import mostrar_neo4j
+from vistas.vista_cassandra import mostrar_cassandra
+from motor_cassandra.conectarCassandra import ConectarCassandra
 
 # Configuración de la página web
 st.set_page_config(
@@ -61,9 +63,8 @@ def obtener_conexion_redis():
 def obtener_conexion_neo4j():
     return ConectarNeo4j(uri, user, password)
 
-colleccion_mongo = obtener_coleccion_mongo()
-redis_db = obtener_conexion_redis()
-neo4j_driver = obtener_conexion_neo4j()
+def obtener_conexion_cassandra ():
+    return ConectarCassandra()
 
 # Sistema de pestañas
 tab_cassandra, tab_mongo, tab_neo4j, tab_redis = st.tabs([
@@ -74,14 +75,12 @@ tab_cassandra, tab_mongo, tab_neo4j, tab_redis = st.tabs([
 ])
 
 with tab_mongo:
-    mostrar_mongo (colleccion_mongo)
+    mostrar_mongo (obtener_coleccion_mongo())
     
 with tab_redis:
-    mostrar_redis(redis_db)
+    mostrar_redis(obtener_conexion_redis())
 
 with tab_cassandra:
-    st.header("Consultas en Apache Cassandra")
-    st.info("Estructura Columnar (CQL).")
-
+    mostrar_cassandra(obtener_conexion_cassandra())
 with tab_neo4j:
-    mostrar_neo4j(neo4j_driver)
+    mostrar_neo4j(obtener_conexion_neo4j())

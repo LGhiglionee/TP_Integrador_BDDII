@@ -1,49 +1,47 @@
-import csv
+from cassandra.cluster import Cluster
 
-def convertir_valor(valor, tipo):
-    if valor == "" or valor is None:
-        return None
+from motor_cassandra.crearTablasCassandra import crearTablas
+from motor_cassandra.importarDatasetCassandra import ImportarDataset
 
-    if tipo == "int":
-        return int(valor)
 
-    if tipo == "float":
-        return float(valor.replace(",", "."))
-
-    return valor
-
-def ImportarDatasetCassandra(session, path_csv, tabla, columnas, tipos_columnas):
+def ConectarCassandra():
     try:
-        with open(path_csv, "r", encoding="UTF-8") as archivo:
-            lector = csv.DictReader(archivo, delimiter=";")
+        cluster = Cluster(["127.0.0.1"])
+        session = cluster.connect()
 
-            columnas_sql = ", ".join(columnas)
-            placeholders = ", ".join(["?"] * len(columnas))
+        session.execute("""
+            CREATE KEYSPACE IF NOT EXISTS equidata
+            WITH replication = {
+                'class': 'SimpleStrategy',
+                'replication_factor': 1
+            }
+        """)
 
-            query = f"""
-                INSERT INTO {tabla} ({columnas_sql})
-                VALUES ({placeholders})
-            """
+        session.set_keyspace("equidata")
 
-            insert_preparado = session.prepare(query)
+        crearTablas(session)
 
-            cantidad = 0
+        cantidad = contar_registros(session, "resultados_por_carrera")
 
-            for fila in lector:
-                valores = []
+        if cantidad == 0:
+            print("Base de datos Cassandra vacía. Iniciando importación...")
+            ImportarDataset(session)
+        else:
+            print("Cassandra ya contiene datos. Saltando importación.")
 
-                for columna in columnas:
-                    tipo = tipos_columnas.get(columna, "text")
-                    valor = convertir_valor(fila.get(columna), tipo)
-                    valores.append(valor)
-
-                session.execute(insert_preparado, valores)
-                cantidad += 1
-
-            print(f"Se insertaron {cantidad} registros en {tabla}.")
-
-    except FileNotFoundError:
-        print("No se encontró el archivo CSV.")
+        return session
 
     except Exception as e:
-        print(f"Error al importar dataset: {e}")
+        print(f"Se produjo un error al conectar con Cassandra: {e}")
+        return None
+
+
+def contar_registros(session, tabla):
+    try:
+        resultado = session.execute(f"SELECT COUNT(*) FROM {tabla}")
+        fila = resultado.one()
+        return fila[0]
+
+    except Exception as e:
+        print(f"No se pudo contar registros en {tabla}: {e}")
+        return 0

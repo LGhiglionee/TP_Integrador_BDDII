@@ -56,7 +56,7 @@ def validar_y_tipar_datos(inputs_crudos):
 
 # --- VISTA PRINCIPAL ---
 def mostrar_mongo(collection):
-    st.header("Consultas sobre base de datos NoSQL - MongoDB")
+    st.header("Consultas Documentales - MongoDB")
     
     if collection is None:
         st.error("No se pudo conectar a la colección de MongoDB.")
