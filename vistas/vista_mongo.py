@@ -1,3 +1,13 @@
+"""
+Vista de MongoDB para el dashboard EQUIDATA.
+
+Este módulo construye la interfaz web correspondiente al motor documental MongoDB.
+Permite realizar operaciones CRUD sobre la colección de caballos y ejecutar
+consultas simples, complejas e historial por nombre.
+
+La vista reutiliza funciones de backend que originalmente imprimen resultados
+por consola, capturando esa salida para mostrarla dentro de Streamlit.
+"""
 import streamlit as st
 import io
 import builtins
@@ -7,7 +17,16 @@ from motor_mongo.consultas.consultasBasicas_mongo import *
 from motor_mongo.consultas.consultasAvanzadas_mongo import *
 from motor_mongo.crud.crud_mongo import *
 
+# =========================================================
+# FUNCIÓN AUXILIAR PARA CAPTURAR SALIDA DE CONSOLA
+# =========================================================
 def ejecutar_consulta_y_capturar_output(func, *args, **kwargs):
+    """
+   Ejecuta una función de consulta y captura todo lo que imprime por consola.
+
+   Esto permite reutilizar funciones diseñadas para terminal dentro de
+   Streamlit, mostrando su resultado en la consola de salida de la interfaz.
+   """
     f = io.StringIO()
 
     with redirect_stdout(f):
@@ -23,15 +42,34 @@ def ejecutar_consulta_y_capturar_output(func, *args, **kwargs):
 
     return valor_final
 
+# =========================================================
+# VALIDACIÓN Y CONVERSIÓN DE DATOS
+# =========================================================
+
 def validar_y_tipar_datos(inputs_crudos):
+    """
+    Recibe los valores ingresados desde la interfaz y construye un documento
+    válido para MongoDB.
+
+    La función:
+    - descarta campos vacíos;
+    - convierte campos numéricos al tipo correspondiente;
+    - acumula errores de validación para mostrarlos en pantalla.
+
+    Retorna:
+    - doc_limpio: diccionario con los datos listos para insertar o actualizar;
+    - errores: lista de mensajes de error detectados.
+    """
     doc_limpio = {}
     errores = []
-    
+
+    # Campos almacenados como texto en MongoDB.
     campos_texto = ["horse_id", "horse_name", "race_id", "jockey", "trainer", "father", "mother", "gfather", "finish_time"]
     for campo in campos_texto:
         if inputs_crudos.get(campo):
             doc_limpio[campo] = inputs_crudos[campo]
-            
+
+    # Campos almacenados como enteros.
     campos_enteros = ["horse_number", "actual_weight", "declared_horse_weight", "draw", "finishing_position", "running_position_1", "running_position_2", "running_position_3"]
     for campo in campos_enteros:
         valor = inputs_crudos.get(campo)
@@ -40,7 +78,8 @@ def validar_y_tipar_datos(inputs_crudos):
                 doc_limpio[campo] = int(valor)
             except ValueError:
                 errores.append(f"El campo '{campo}' debe ser un número entero sin letras.")
-                
+
+    # Campo decimal correspondiente al tiempo final expresado en segundos.
     valor_tiempo = inputs_crudos.get("finish_time_seconds")
     if valor_tiempo:
         try:
@@ -50,13 +89,27 @@ def validar_y_tipar_datos(inputs_crudos):
             
     return doc_limpio, errores
 
+# =========================================================
+# VISTA PRINCIPAL DE MONGODB
+# =========================================================
 def mostrar_mongo(collection):
+    """
+    Renderiza la pestaña de MongoDB dentro del dashboard.
+
+    Recibe como parámetro la colección principal de MongoDB y permite:
+    - insertar documentos;
+    - actualizar documentos existentes;
+    - borrar documentos;
+    - ejecutar consultas simples, complejas e historial por nombre.
+    """
     st.header("Consultas Documentales - MongoDB")
-    
+
+    # Validación inicial de conexión.
     if collection is None:
         st.error("No se pudo conectar a la colección de MongoDB.")
         return
 
+    # Variables generales de estado para la vista.
     mensaje_crud = None
     tipo_mensaje = None
     ejecutar_consulta = False
@@ -66,26 +119,39 @@ def mostrar_mongo(collection):
     nombre_caballo = ""
     errores_validacion = []
 
+    # Distribución principal:columna izquierda para controles, columna derecha para salida.
     col1, col2 = st.columns([1, 1.8])
-    
+
+    # =========================================================
+    # PANEL IZQUIERDO - CONTROLES
+    # =========================================================
     with col1:
         with st.container(border=True):
             st.markdown("### Panel de Control")
             
             modo_operacion = st.radio("Modo de Operación", ["Modificar Datos", "Consultas/Simulación"], horizontal=True,key="modo_operacion_mongo")
+
+            # =====================================================
+            # CRUD SOBRE DOCUMENTOS
+            # =====================================================
             if modo_operacion == "Modificar Datos":
                 categoria1 = st.radio("Operación CRUD", ["Inserción", "Actualización", "Borrado"],key="crud_mongo")
-                
+
+                # -------------------------------------------------
+                # INSERCIÓN DE DOCUMENTOS
+                # -------------------------------------------------
                 if categoria1 == "Inserción":
                     with st.form("form_insercion"):
                         st.markdown("**Inserción de registro en MongoDB**")
 
+                        # Datos mínimos necesarios para identificar un registro.
                         horse_id = st.text_input("ID Caballo (Obligatorio):",key="insert_horse_id_mongo").upper().strip()
                         race_id = st.text_input("ID Carrera (Obligatorio):",key="insert_race_id_mongo").upper().strip()
                         horse_name = st.text_input("Nombre Caballo (Obligatorio):",key="insert_horse_name_mongo").upper().strip()
                         jockey = st.text_input("Jockey:",key="insert_jockey_mongo").strip()
                         trainer = st.text_input("Entrenador:",key="insert_trainer_mongo").strip()
 
+                        # Campos opcionales provenientes del dataset original.
                         with st.expander("Ver campos técnicos opcionales (Tiempos, Posiciones, etc.)"):
                             colA, colB = st.columns(2)
                             with colA:
@@ -108,6 +174,7 @@ def mostrar_mongo(collection):
                         btn_insertar = st.form_submit_button("Insertar Documento", type="primary", use_container_width=True)
                         
                         if btn_insertar:
+                            # Validación de campos obligatorios.
                             if not horse_id or not race_id or not horse_name:
                                 mensaje_crud = "Error: No podés insertar el registro. El 'ID Caballo', 'ID Carrera' y 'Nombre' son obligatorios."
                                 tipo_mensaje = "error"
@@ -128,6 +195,7 @@ def mostrar_mongo(collection):
                                 if errores_validacion:
                                     tipo_mensaje = "errores_multiples"
                                 elif nuevo_doc:
+                                    # Se evita duplicar un caballo dentro de la misma carrera.
                                     existe = buscar_caballo_por_id_y_carrera(collection, horse_id, race_id)
                                     if existe:
                                         mensaje_crud = f"El caballo {horse_id} ya está registrado en la carrera {race_id}."
@@ -140,6 +208,9 @@ def mostrar_mongo(collection):
                                     mensaje_crud = "Error inesperado al procesar los datos."
                                     tipo_mensaje = "warning"
 
+                # -------------------------------------------------
+                # ACTUALIZACIÓN DE DOCUMENTOS
+                # -------------------------------------------------
                 elif categoria1 == "Actualización":
                     with st.form("form_actualizacion"):
                         st.markdown("**1. Buscar Registro Exacto:**")
@@ -211,6 +282,9 @@ def mostrar_mongo(collection):
                                     mensaje_crud = f"No se encontró al caballo {horse_id_busqueda} participando en la carrera {race_id_busqueda}."
                                     tipo_mensaje = "error"
 
+                # -------------------------------------------------
+                # BORRADO DE DOCUMENTOS
+                # -------------------------------------------------
                 elif categoria1 == "Borrado":
                     tipo_borrado = st.radio("Opciones de Eliminación:",
                                             ["Eliminar caballo de una carrera especifica",
@@ -263,6 +337,9 @@ def mostrar_mongo(collection):
                                     mensaje_crud = "El ID del Caballo es obligatorio."
                                     tipo_mensaje = "warning"
 
+            # =====================================================
+            # CONSULTAS Y SIMULACIÓN
+            # =====================================================
             elif modo_operacion == "Consultas/Simulación":
                 categoria2 = st.radio("Tipo de consulta", ["Simples", "Complejas", "Historial por Nombre"],key="tipo_consulta_mongo")
                 
@@ -298,9 +375,13 @@ def mostrar_mongo(collection):
                     nombre_caballo = st.text_input("Ingresar nombre del caballo:", value="",key="historial_nombre_mongo").upper().strip()
                     ejecutar_consulta = st.button("Buscar Historial", use_container_width=True, type="primary",key="btn_historial_mongo")
 
+    # =========================================================
+    # PANEL DERECHO - SALIDA
+    # =========================================================
     with col2:
         st.subheader("Consola de Salida")
-        
+
+        # Mensajes generados por operaciones CRUD.
         if tipo_mensaje == "errores_multiples":
             st.error("Se encontraron errores de validación de datos. Corregilos para continuar:")
 
@@ -312,6 +393,7 @@ def mostrar_mongo(collection):
             elif tipo_mensaje == "error": st.error(mensaje_crud)
             elif tipo_mensaje == "warning": st.warning(mensaje_crud)
 
+        # Ejecución de consultas seleccionadas desde el panel izquierdo.
         if ejecutar_consulta:
             with st.spinner('Buscando en MongoDB...'):
                 if modo_operacion == "Consultas/Simulación":
@@ -329,11 +411,14 @@ def mostrar_mongo(collection):
                         elif opcion.startswith("3."): output_resultado = ejecutar_consulta_y_capturar_output(caballos_diez_tiempo, collection)
                         elif opcion.startswith("4."): output_resultado = ejecutar_consulta_y_capturar_output(caballosConA, collection)
                         elif opcion.startswith("5."): output_resultado = ejecutar_consulta_y_capturar_output(top_10_tiempos, collection)
-            
+
+
                     elif categoria2 == "Historial por Nombre":
                         if not nombre_caballo:
                             st.warning("Por favor, ingrese un nombre válido.")
                         else:
+                            # La función original pide input() por consola.
+                            # Se reemplaza temporalmente para integrarla con Streamlit.
                             input_original = builtins.input
                             try:
                                 builtins.input = lambda *args: nombre_caballo
@@ -341,7 +426,9 @@ def mostrar_mongo(collection):
                             finally:
                                 builtins.input = input_original
 
-        # Renderizado estético del resultado
+        # =====================================================
+        # RENDERIZADO DEL RESULTADO
+        # =====================================================
         if output_resultado:
             if modo_operacion == "Consultas/Simulación" and categoria2 == "Historial por Nombre":
                 consulta_limpia = f"historial_{nombre_caballo.replace(' ', '_').lower()}"

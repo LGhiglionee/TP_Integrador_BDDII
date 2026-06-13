@@ -1,3 +1,13 @@
+"""
+Vista de Neo4j para el dashboard EQUIDATA.
+
+Este módulo construye la interfaz web correspondiente al motor de grafos Neo4j.
+Permite ejecutar consultas simples, consultas complejas y operaciones CRUD
+seleccionadas sobre el grafo de caballos, carreras, entrenadores, jockeys y linaje.
+
+La vista reutiliza funciones de backend que imprimen resultados por consola,
+capturando esa salida para mostrarla dentro de Streamlit.
+"""
 import streamlit as st
 import io
 import sys
@@ -6,7 +16,24 @@ from motor_neo4j.consultas.consultasBasicas_neo4j import *
 from motor_neo4j.consultas.consultasAvanzadas_neo4j import *
 from motor_neo4j.crud.crud_neo4j import *
 
+# =========================================================
+# FUNCIÓN AUXILIAR PARA CAPTURAR SALIDA DE CONSOLA
+# =========================================================
 def ejecutar_consulta_y_capturar_output(func, session, valor_input=None):
+    """
+    Ejecuta una función de consulta Neo4j y captura todo lo que imprime por consola.
+
+    Algunas funciones del backend fueron pensadas para ejecutarse en terminal.
+    Esta función permite integrarlas con Streamlit redirigiendo stdout y stdin.
+
+    Parámetros:
+    - func: función de consulta a ejecutar.
+    - session: sesión activa de Neo4j.
+    - valor_input: parámetro opcional que reemplaza un input() por consola.
+
+    Retorna:
+    - Texto generado por la función ejecutada.
+    """
     f_out = io.StringIO()
     entrada_simulada = f"{valor_input}\n" if valor_input is not None else "\n"
     f_in = io.StringIO(entrada_simulada)
@@ -23,6 +50,7 @@ def ejecutar_consulta_y_capturar_output(func, session, valor_input=None):
             else:
                 func(session)
         except TypeError as te:
+            # Compatibilidad con funciones que reciben solo session.
             if "argument" in str(te) or "positional" in str(te):
                 func(session)
             else:
@@ -40,7 +68,16 @@ def ejecutar_consulta_y_capturar_output(func, session, valor_input=None):
 
     return valor_final
 
+# =========================================================
+# ARMADO DE SALIDA PARA OPERACIONES CRUD
+# =========================================================
 def armar_salida_insercion_neo4j(datos):
+    """
+   Genera un resumen en texto plano del registro insertado en Neo4j.
+
+   Este texto se muestra en la consola de salida de Streamlit y también
+   se ofrece como archivo TXT descargable.
+   """
     salida = "Se insertó el registro en Neo4j\n\n"
 
     salida += "Nodo Caballo:\n"
@@ -72,6 +109,12 @@ def armar_salida_insercion_neo4j(datos):
     return salida
 
 def armar_salida_borrado_neo4j(tipo_borrado, horse_id, race_id=None, resultado=None):
+    """
+    Genera un resumen en texto plano de una operación de borrado en Neo4j.
+
+    Permite registrar si se eliminó una participación puntual en una carrera
+    o si se eliminó completamente un caballo del grafo.
+    """
     salida = "Se eliminó el registro de Neo4j\n\n"
 
     salida += f"ID Caballo: {horse_id}\n"
@@ -87,12 +130,27 @@ def armar_salida_borrado_neo4j(tipo_borrado, horse_id, race_id=None, resultado=N
 
     return salida
 
+# =========================================================
+# VISTA PRINCIPAL DE NEO4J
+# =========================================================
 def mostrar_neo4j(driver):
+    """
+   Renderiza la pestaña de Neo4j dentro del dashboard.
+
+   Recibe un driver activo de Neo4j y permite:
+   - insertar registros en el grafo;
+   - borrar participaciones o caballos completos;
+   - ejecutar consultas simples;
+   - ejecutar consultas complejas de análisis de linaje y recomendaciones.
+   """
     st.header("Consultas de Grafos - Neo4j")
 
+    # Validación inicial de conexión.
     if driver is None:
         st.error("No se pudo conectar a la base de datos Neo4j.")
         return
+
+    # Variables generales de control.
     mensaje_crud = None
     tipo_mensaje = None
     ejecutar = False
@@ -101,32 +159,46 @@ def mostrar_neo4j(driver):
     categoria = None
     parametro = ""
 
+    # Estado persistente para mostrar la última operación CRUD realizada.
     if "neo4j_ultimo_resultado_crud" not in st.session_state:
         st.session_state["neo4j_ultimo_resultado_crud"] = ""
 
     if "neo4j_ultimo_archivo_crud" not in st.session_state:
         st.session_state["neo4j_ultimo_archivo_crud"] = "resultado_crud_neo4j.txt"
 
+    # Distribución principal:columna izquierda para controles, columna derecha para resultados.
     col1, col2 = st.columns([1, 1.8])
+
+    # =========================================================
+    # PANEL IZQUIERDO - CONTROLES
+    # =========================================================
     with col1:
         with st.container(border=True):
             st.markdown("### Panel de Control")
 
             modo_operacion = st.radio("Modo de Operación",["Modificar Datos", "Consultas/Simulación"],horizontal=True,key="modo_operacion_neo4j")
 
+            # =====================================================
+            # CRUD SOBRE GRAFO
+            # =====================================================
             if modo_operacion == "Modificar Datos":
                 categoria_crud = st.radio("Operación CRUD",["Inserción", "Borrado"],key="crud_neo4j")
 
+                # -------------------------------------------------
+                # INSERCIÓN DE REGISTRO
+                # -------------------------------------------------
                 if categoria_crud == "Inserción":
                     with st.form("form_insercion_neo4j", clear_on_submit=True):
                         st.markdown("**Inserción de registro en Neo4j**")
 
+                        # Datos obligatorios para identificar caballo y carrera.
                         horse_id = st.text_input("ID Caballo (Obligatorio):",value="",placeholder="Ej: A177",key="neo4j_insert_horse_id").upper().strip()
                         horse_name = st.text_input("Nombre del Caballo (Obligatorio):",value="",placeholder="Ej: ENCORE BOY",key="neo4j_insert_horse_name").upper().strip()
                         race_id = st.text_input("ID Carrera (Obligatorio):",value="",placeholder="Ej: 2016-783",key="neo4j_insert_race_id").upper().strip()
                         jockey = st.text_input("Jockey:",value="",placeholder="Ej: Z Purton",key="neo4j_insert_jockey").strip()
                         trainer = st.text_input("Entrenador:",value="",placeholder="Ej: P F Yiu",key="neo4j_insert_trainer").strip()
 
+                        # Campos opcionales cargados como propiedades y relaciones.
                         with st.expander("Ver campos opcionales"):
                             colA, colB = st.columns(2)
                             with colA:
@@ -148,6 +220,7 @@ def mostrar_neo4j(driver):
                         btn_insertar = st.form_submit_button("Insertar Registro",type="primary",use_container_width=True)
 
                         if btn_insertar:
+                            # Validación de campos obligatorios.
                             if not horse_id or not horse_name or not race_id:
                                 mensaje_crud = "El ID del caballo, el nombre del caballo y el ID de carrera son obligatorios."
                                 tipo_mensaje = "error"
@@ -161,6 +234,7 @@ def mostrar_neo4j(driver):
                                 }
 
                                 with driver.session(database="neo4j") as session:
+                                    # Evita duplicar el mismo caballo en la misma carrera.
                                     existe = buscar_participacion_caballo(session,horse_id,race_id)
 
                                     if existe:
@@ -174,6 +248,9 @@ def mostrar_neo4j(driver):
                                         st.session_state["neo4j_ultimo_resultado_crud"] = armar_salida_insercion_neo4j(datos)
                                         st.session_state["neo4j_ultimo_archivo_crud"] = f"resultado_insercion_{horse_id}_{race_id}_neo4j.txt"
 
+                # -------------------------------------------------
+                # BORRADO DE REGISTROS
+                # -------------------------------------------------
                 elif categoria_crud == "Borrado":
                     tipo_borrado = st.radio("Opciones de Eliminación:",["Eliminar caballo de una carrera específica","Eliminar caballo completo del grafo"],key="tipo_borrado_neo4j")
 
@@ -224,9 +301,16 @@ def mostrar_neo4j(driver):
 
                                             st.session_state["neo4j_ultimo_resultado_crud"] = armar_salida_borrado_neo4j("Eliminar caballo completo del grafo",horse_id_borrar,None,resultado)
                                             st.session_state["neo4j_ultimo_archivo_crud"] = f"resultado_borrado_completo_{horse_id_borrar}_neo4j.txt"
+
+            # =====================================================
+            # CONSULTAS Y SIMULACIÓN
+            # =====================================================
             elif modo_operacion == "Consultas/Simulación":
                 categoria = st.radio("Tipo de consulta",["Simples", "Complejas"],key="btn_tipo_consulta_neo4j")
 
+                # -------------------------------------------------
+                # CONSULTAS SIMPLES
+                # -------------------------------------------------
                 if categoria == "Simples":
                     opcion = st.selectbox(
                         "Seleccione la consulta simple:",
@@ -241,6 +325,9 @@ def mostrar_neo4j(driver):
                     )
                     ejecutar = st.button("Ejecutar Consulta Simple", use_container_width=True, type="primary", key="btn_ejecutar_consulta_s_neo4j")
 
+                # -------------------------------------------------
+                # CONSULTAS COMPLEJAS
+                # -------------------------------------------------
                 elif categoria == "Complejas":
                     opcion = st.selectbox(
                         "Seleccione la consulta compleja:",
@@ -260,8 +347,13 @@ def mostrar_neo4j(driver):
 
                     ejecutar = st.button("Ejecutar Consulta Compleja", use_container_width=True, type="primary", key="btn_ejecutar_consulta_c_neo4j")
 
+    # =========================================================
+    # PANEL DERECHO - SALIDA
+    # =========================================================
     with col2:
         st.subheader("Consola de Salida")
+
+        # Ejecución de consultas seleccionadas desde el panel izquierdo.
         if ejecutar:
             if categoria == "Complejas" and not parametro:
                 st.warning("Por favor, ingrese un nombre antes de ejecutar la consulta.")
@@ -283,6 +375,9 @@ def mostrar_neo4j(driver):
                             elif opcion.startswith("5."): output_resultado = ejecutar_consulta_y_capturar_output(linea_sangre_caballo, session, parametro)
                             elif opcion.startswith("6."): output_resultado = ejecutar_consulta_y_capturar_output(ranking_entrenadores_por_linaje, session, parametro)
 
+        # =====================================================
+        # RENDERIZADO DEL RESULTADO
+        # =====================================================
         if output_resultado:
             accion_limpia = opcion.split(". ", 1)[-1].replace(" ", "_").lower()
 
