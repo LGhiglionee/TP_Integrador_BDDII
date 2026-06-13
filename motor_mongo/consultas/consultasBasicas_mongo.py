@@ -7,7 +7,7 @@ def caballosEntrenadosP_F_YIU(collection):
             print("No se encontraron resultados. Verificá los nombres de las columnas.")
         else:
             nombres_no_repetidos = sorted(nombres_no_repetidos)
-            print(f"\nEl total de caballos entrenados por P F YIU es {len(nombres_no_repetidos)}")
+            print(f"\nTotal de caballos entrenados por P F YIU es {len(nombres_no_repetidos)}")
             for nombre in nombres_no_repetidos:
                 print(f"- {nombre}")
             
@@ -23,7 +23,7 @@ def caballosGanadores (collection):
             print("No se encontraron resultados. Verificá los nombres de las columnas.")
         else:
             nombres_no_repetidos = sorted(nombres_no_repetidos)
-            print(f"\nEl total de caballos ganadores es {len(nombres_no_repetidos)}")            
+            print(f"\nTotal de caballos ganadores es {len(nombres_no_repetidos)}")
             for nombre in nombres_no_repetidos:
                 print(f"- {nombre}")
                 
@@ -39,7 +39,7 @@ def caballosMenoresDeMil (collection):
             print("No se encontraron resultados. Verificá los nombres de las columnas.")
         else:
             nombres_no_repetidos = sorted(nombres_no_repetidos)
-            print(f"\nEl total de caballos que pesan menos de 1000 libras es {len(nombres_no_repetidos)}")
+            print(f"\nTotal de caballos que pesan menos de 1000 libras es {len(nombres_no_repetidos)}")
             for nombre in nombres_no_repetidos:
                 print(f"- {nombre}")
                 
@@ -51,7 +51,7 @@ def cantCarreras (collection):
         races_unicas = collection.distinct("race_id")
         total = len(races_unicas)
 
-        print(f"\nLa cantidad total de carreras que se corrieron fue {total}")
+        print(f"\nTotal de carreras corridas fue {total}")
                 
     except Exception as e:
         print(f"Error en la consulta: {e}")
@@ -65,7 +65,7 @@ def caballosVeloces (collection):
                 print("No se encontraron resultados. Verificá los nombres de las columnas.")
         else:
             nombres_no_repetidos = sorted(nombres_no_repetidos)
-            print(f"\nEl total de caballos que llegaron con tiempo menor a 1 minuto 23 segundos es {len(nombres_no_repetidos)}")
+            print(f"\nTotal de caballos que llegaron con tiempo menor a 1 minuto 23 segundos es {len(nombres_no_repetidos)}")
 
             for nombre in nombres_no_repetidos:
                 print(f"- {nombre}")
@@ -76,19 +76,17 @@ def caballosVeloces (collection):
 def buscarHistorialCaballo (collection):
     try:
         nombre = input ("\n Ingresar nombre del caballo el cual se quiere conocer el historial:").upper().strip()
-        # Total de carreras jugadas.
         total_carreras = collection.count_documents({"horse_name": nombre})
         if total_carreras == 0:
                 print(f"\nNo se encontraron registros para el caballo: {nombre}")
                 return
-        print(f"\nEl total de carreras jugadas por {nombre} fue {total_carreras}")
-        # Total de carreras ganadas.
+        print(f"\nTotal de carreras jugadas por {nombre} fue {total_carreras}")
         ganadas = collection.count_documents({
                 "horse_name": nombre,
                 "finishing_position": 1
             })
         print("")
-        print(f"El total de carreras ganadas por {nombre} fue {ganadas}")
+        print(f"Total de carreras ganadas por {nombre} fue {ganadas}")
 
         efectividad = (ganadas / total_carreras) * 100
         print("")
@@ -101,6 +99,6 @@ def buscarHistorialCaballo (collection):
                 "$lt": 60}
             })
         print("")
-        print(f"El total de carreras corridas con tiempo menor a 1 minuto de {nombre} fueron {rapidas}")
+        print(f"Total de carreras corridas con tiempo menor a 1 minuto de {nombre} fue {rapidas}")
     except Exception as e:
         print("Error en la consulta:{e}")

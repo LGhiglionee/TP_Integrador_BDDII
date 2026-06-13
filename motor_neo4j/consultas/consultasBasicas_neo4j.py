@@ -1,4 +1,3 @@
-# 1. Listar todos los entrenadores únicos registrados
 def listar_todos_entrenadores(session):
     try:
         query = """
@@ -12,7 +11,7 @@ def listar_todos_entrenadores(session):
         if not resultados:
             print("No se encontraron entrenadores registrados.")
         else:
-            print(f"Total de entrenadores únicos encontrados: {len(resultados)}")
+            print(f"Total de entrenadores encontrados: {len(resultados)}")
             for entrenador in resultados:
                 print(f"- {entrenador['entrenador']}")
                 
@@ -20,60 +19,61 @@ def listar_todos_entrenadores(session):
         print(f"Error en la consulta: {e}")
 
 
-# 2. Mostrar todos los caballos ganadores (Posición 1)
 def caballos_ganadores(session):
     try:
         query = """
         MATCH (c:Caballo)-[r:CORRIO]->(:Carrera)
         WHERE r.posicion = 1
         RETURN DISTINCT c.nombre AS nombre
+        ORDER BY nombre ASC
         """
+
         resultados = list(session.run(query))
         
         if not resultados:
-            print("No se encontraron caballos ganadores con posición 1.")
+            print("No se encontraron caballos ganadores.")
         else:
-            print(f"El total de caballos ganadores en el grafo es: {len(resultados)}")
+            print(f"Total de caballos ganadores encontrados: {len(resultados)}")
             for caballo in resultados:
-                print(f"🏆 {caballo['nombre']}")
+                print(f"- {caballo['nombre']}")
                 
     except Exception as e:
         print(f"Error en la consulta: {e}")
 
-
-# 3. Contar la cantidad total de caballos en el grafo
 def cantidad_total_caballos(session):
     try:
         query = """
-        MATCH (c:Caballo)
-        RETURN count(c) AS total
+        MATCH (c:Caballo)-[:CORRIO]->(:Carrera)
+        RETURN count(DISTINCT c) AS total
         """
+
         resultados = list(session.run(query))
         
         if not resultados:
-            print("No se pudieron contabilizar los caballos.")
+            print("No se pudieron contar el total de caballos.")
         else:
             for registro in resultados:
-                print(f"La cantidad total de caballos registrados en el grafo es: {registro['total']}")
+                print(f"Total de caballos que corrieron carreras encontrados: {registro['total']}")
                 
     except Exception as e:
         print(f"Error en la consulta: {e}")
 
 
-# 4. Mostrar entrenadores cuyo nombre empieza con P
 def entrenadores_letra_p(session):
     try:
         query = """
         MATCH (e:Entrenador)
-        WHERE e.nombre STARTS WITH 'P'
+        WHERE toUpper (e.nombre) STARTS WITH 'P'
         RETURN DISTINCT e.nombre AS entrenador
+        ORDER BY entrenador
         """
+
         resultados = list(session.run(query))
         
         if not resultados:
             print("No se encontraron entrenadores que comiencen con la letra P.")
         else:
-            print(f"Los entrenadores que comienzan con la letra P son: {len(resultados)}")
+            print(f"Total de entrenadores que su nombre comienza con P es: {len(resultados)}")
             for entrenador in resultados:
                 print(f"- {entrenador['entrenador']}")
                 
@@ -81,20 +81,20 @@ def entrenadores_letra_p(session):
         print(f"Error en la consulta: {e}")
 
 
-# 5. Mostrar caballos que contienen 'DRAGON' en su nombre
 def caballos_con_dragon(session):
     try:
         query = """
-        MATCH (c:Caballo)
-        WHERE c.nombre CONTAINS 'DRAGON'
+        MATCH (c:Caballo)-[:CORRIO]->(:Carrera)
+        WHERE toUpper (c.nombre) CONTAINS 'DRAGON'
         RETURN DISTINCT c.nombre AS nombre
+        ORDER BY nombre
         """
         resultados = list(session.run(query))
         
         if not resultados:
             print("No se encontraron caballos con la palabra 'DRAGON' en su nombre.")
         else:
-            print(f"Se encontraron {len(resultados)} caballos con 'DRAGON':")
+            print(f"Total de caballos con ´DRAGON´ en su nombre es:{len(resultados)}")
             for caballo in resultados:
                 print(f"- {caballo['nombre']}")
                 

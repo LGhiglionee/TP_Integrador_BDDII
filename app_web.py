@@ -56,13 +56,14 @@ def obtener_coleccion_mongo():
     return ConectarMongo("Cursus", "InfoHorses")
 
 @st.cache_resource
+def obtener_conexion_neo4j():
+    return ConectarNeo4j(uri, user, password)
+
+@st.cache_resource
 def obtener_conexion_redis():
     return conectarRedis()
 
 @st.cache_resource
-def obtener_conexion_neo4j():
-    return ConectarNeo4j(uri, user, password)
-
 def obtener_conexion_cassandra ():
     return ConectarCassandra()
 

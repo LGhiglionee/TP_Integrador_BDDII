@@ -1,11 +1,14 @@
-# 1. Buscar posición de un caballo específico
 def buscar_caballo_nombre(session, nombre):
     try:
         nombre = nombre.upper().strip()
 
         query = """
-        MATCH (c:Caballo {nombre: $nombre_caballo})-[r:CORRIO]->(race:Carrera)
-        RETURN c.nombre AS nombre, r.posicion AS posicion, race.id AS carrera_id
+        MATCH (c:Caballo)-[r:CORRIO]->(race:Carrera)
+        WHERE toUpper(c.nombre) = $nombre_caballo
+        RETURN 
+            c.nombre AS nombre, 
+            r.posicion AS posicion, 
+            race.id AS carrera_id
         ORDER BY race.id
         """
 
@@ -21,19 +24,29 @@ def buscar_caballo_nombre(session, nombre):
     except Exception as e:
         print(f"Error en la consulta avanzada: {e}")
 
-
-# 2. Recomendación de Entrenador (Matchmaking por hermanos)
 def recomendacion_entrenador_matchmaking(session, nombre):
     try:
         nombre = nombre.upper().strip()
 
         query = """
-        MATCH (c:Caballo {nombre: $nombre_caballo})-[:HIJO_DE]->(padre:Caballo)
-        MATCH (padre)<-[:HIJO_DE]-(hermano:Caballo)-[:ENTRENADO_POR]->(e:Entrenador)
-        WHERE e.nombre <> 'Desconocido' 
+        MATCH (c:Caballo)-[:HIJO_DE]->(progenitor:Caballo)
+        WHERE toUpper(c.nombre) = $nombre_caballo
+          AND progenitor.nombre IS NOT NULL
+          AND progenitor.nombre <> 'Desconocido'
+          AND progenitor.nombre <> 'Desconocida'
+
+        MATCH (progenitor)<-[:HIJO_DE]-(hermano:Caballo)-[:ENTRENADO_POR]->(e:Entrenador)
+        WHERE e.nombre <> 'Desconocido'
           AND hermano <> c
-        WITH e, count(hermano) AS hermanos_entrenados
-        RETURN e.nombre AS entrenador, hermanos_entrenados
+          AND EXISTS {
+              MATCH (hermano)-[:CORRIO]->(:Carrera)
+          }
+
+        WITH e, count(DISTINCT hermano) AS hermanos_entrenados
+
+        RETURN 
+            e.nombre AS entrenador, 
+            hermanos_entrenados
         ORDER BY hermanos_entrenados DESC
         LIMIT 1
         """
@@ -47,29 +60,36 @@ def recomendacion_entrenador_matchmaking(session, nombre):
             for r in resultados:
                 print(f"Para el caballo '{nombre}':")
                 print(f"Te recomendamos al entrenador: {r['entrenador']}")
-                print(f"Razón: Ya entrenó a {r['hermanos_entrenados']} hermanos de la misma familia genética.")
+                print(f"Debido a que ya entrenó a {r['hermanos_entrenados']} hermanos de la misma familia genética.")
 
     except Exception as e:
         print(f"Error en la consulta avanzada: {e}")
 
-
-# 3. Buscar Caballos Similares (Patrón de Diamante)
 def caballos_similares_diamante(session, nombre):
     try:
         nombre = nombre.upper().strip()
 
         query = """
-        MATCH (c1:Caballo {nombre: $nombre_caballo})-[:NIETO_DE]->(abuelo:Caballo)
+        MATCH (c1:Caballo)-[:NIETO_DE]->(abuelo:Caballo)
         MATCH (c1)-[:ENTRENADO_POR]->(e:Entrenador)
-        WHERE abuelo.nombre <> 'Desconocido' 
+        WHERE toUpper(c1.nombre) = $nombre_caballo
+          AND abuelo.nombre IS NOT NULL
+          AND abuelo.nombre <> 'Desconocido'
+          AND abuelo.nombre <> 'Desconocida'
           AND e.nombre <> 'Desconocido'
 
         MATCH (c2:Caballo)-[:NIETO_DE]->(abuelo)
         MATCH (c2)-[:ENTRENADO_POR]->(e)
-        WHERE c1 <> c2 
+        MATCH (c2)-[:CORRIO]->(:Carrera)
+        WHERE c1 <> c2
+          AND c2.nombre IS NOT NULL
           AND c2.nombre <> 'Desconocido'
+          AND c2.nombre <> 'Desconocida'
 
-        RETURN DISTINCT c2.nombre AS similar, abuelo.nombre AS abuelo, e.nombre AS entrenador
+        RETURN DISTINCT 
+            c2.nombre AS similar, 
+            abuelo.nombre AS abuelo, 
+            e.nombre AS entrenador
         ORDER BY c2.nombre
         LIMIT 30
         """
@@ -82,37 +102,41 @@ def caballos_similares_diamante(session, nombre):
             print("=== PATRÓN DE DIAMANTE (CABALLOS SIMILARES DE LINAJE) ===")
             print(f"Caballos con características similares a '{nombre}':")
             for r in resultados:
-                print(f"- Caballo: {r['similar']}")
-                print(f"  * Comparten el abuelo: {r['abuelo']}")
-                print(f"  * Comparten el mismo entrenador: {r['entrenador']}\n")
+                print(f" Caballo: {r['similar']}")
+                print(f" Comparten el abuelo: {r['abuelo']}")
+                print(f" Comparten el mismo entrenador: {r['entrenador']}\n")
 
     except Exception as e:
         print(f"Error en la consulta avanzada: {e}")
 
-
-# 4. Recomendación de Apuestas por Éxito Genético
 def recomendacion_apuestas_linaje(session, nombre):
     try:
         nombre = nombre.upper().strip()
 
         query = """
-        MATCH (c:Caballo {nombre: $nombre_caballo})-[:HIJO_DE]->(padre:Caballo)
-        WHERE padre.nombre <> 'Desconocido'
+        MATCH (c:Caballo)-[:HIJO_DE]->(padre:Caballo)
+        WHERE toUpper(c.nombre) = $nombre_caballo
+          AND padre.nombre IS NOT NULL
+          AND padre.nombre <> 'Desconocido'
+          AND padre.nombre <> 'Desconocida'
 
         MATCH (padre)<-[:HIJO_DE]-(hijo_ganador:Caballo)-[r:CORRIO]->(:Carrera)
         WHERE r.posicion = 1
-        WITH padre, count(DISTINCT hijo_ganador) AS victorias, c
 
-        MATCH (padre)<-[:HIJO_DE]-(caballo_sugerido:Caballo)
-        WHERE caballo_sugerido <> c 
+        WITH padre, count(r) AS victorias_familiares, c
+
+        MATCH (padre)<-[:HIJO_DE]-(caballo_sugerido:Caballo)-[r2:CORRIO]->(:Carrera)
+        WHERE caballo_sugerido <> c
+          AND caballo_sugerido.nombre IS NOT NULL
           AND caballo_sugerido.nombre <> 'Desconocido'
-          AND EXISTS {
-              MATCH (caballo_sugerido)-[r2:CORRIO]->(:Carrera)
-              WHERE r2.posicion <> 1
-          }
+          AND caballo_sugerido.nombre <> 'Desconocida'
+          AND r2.posicion <> 1
 
-        RETURN DISTINCT caballo_sugerido.nombre AS sugerido, padre.nombre AS padre, victorias
-        ORDER BY victorias DESC, caballo_sugerido.nombre
+        RETURN DISTINCT 
+            caballo_sugerido.nombre AS sugerido, 
+            padre.nombre AS padre, 
+            victorias_familiares
+        ORDER BY victorias_familiares DESC, caballo_sugerido.nombre
         LIMIT 3
         """
 
@@ -122,26 +146,36 @@ def recomendacion_apuestas_linaje(session, nombre):
             print(f"La familia directa de {nombre} no registra un linaje estadísticamente ganador para apuestas.")
         else:
             print("=== MOTOR DE RECOMENDACIÓN DE APUESTAS GENÉTICAS ===")
-            print(f"Analizando la sangre de '{nombre}', se encontraron las siguientes apuestas sugeridas:")
+            print(f"Analizando la sangre de '{nombre}'")
+
+            padre = resultados[0]["padre"]
+            victorias = resultados[0]["victorias"]
+
+            print("")
+            print(f"Linaje exitoso detectado: {padre}")
+            print(f"Victorias de la familia en carreras: {victorias}")
+
+            print("")
+            print("Apuestas sugeridas:")
+
             for r in resultados:
-                print(f"- Caballo Sugerido: {r['sugerido']}")
-                print(f"  * Pertenece al linaje exitoso de: {r['padre']}")
-                print(f"  * Victorias de la familia en carreras: {r['victorias']}\n")
+                print(f"- {r['sugerido']}")
 
     except Exception as e:
         print(f"Error en la consulta avanzada: {e}")
 
-
-# 5. Ficha Genealógica Estructurada (Línea de Sangre)
 def linea_sangre_caballo(session, nombre):
     try:
         nombre = nombre.upper().strip()
 
         query = """
-        MATCH (c:Caballo {nombre: $nombre_caballo})
+        MATCH (c:Caballo)
+        WHERE toUpper(c.nombre) = $nombre_caballo
+
         OPTIONAL MATCH (c)-[:HIJO_DE]->(progenitor:Caballo)
         OPTIONAL MATCH (c)-[:NIETO_DE]->(abuelo:Caballo)
         OPTIONAL MATCH (c)-[r:CORRIO]->(:Carrera)
+
         RETURN 
             c.nombre AS analizado, 
             collect(DISTINCT r.posicion) AS posiciones, 
@@ -157,8 +191,16 @@ def linea_sangre_caballo(session, nombre):
             print("=== ANÁLISIS DE ÁRBOL GENEALÓGICO ===")
             for r in resultados:
                 posiciones = [str(p) for p in r["posiciones"] if p is not None]
-                padres = [p for p in r["padres"] if p is not None]
-                abuelos = [a for a in r["abuelos"] if a is not None]
+
+                padres = [
+                    p for p in r["padres"]
+                    if p is not None and p not in ["Desconocido", "Desconocida"]
+                ]
+
+                abuelos = [
+                    a for a in r["abuelos"]
+                    if a is not None and a not in ["Desconocido", "Desconocida"]
+                ]
 
                 print(f"Ficha Técnica: {r['analizado']}")
                 print(f"Posiciones obtenidas: {', '.join(posiciones) if posiciones else 'Sin posiciones cargadas'}")
@@ -168,25 +210,31 @@ def linea_sangre_caballo(session, nombre):
     except Exception as e:
         print(f"Error en la consulta: {e}")
 
-
-# 6. Promedio de posiciones por entrenadores de hijos de un caballo padre dado
 def ranking_entrenadores_por_linaje(session, nombre_padre):
     try:
         nombre_padre = nombre_padre.upper().strip()
 
         query = """
-        MATCH (padre:Caballo {nombre: $nombre_padre})<-[:HIJO_DE]-(hijo:Caballo)
+        MATCH (progenitor:Caballo)<-[:HIJO_DE]-(hijo:Caballo)
+        WHERE toUpper(progenitor.nombre) = $nombre_padre
+
         MATCH (hijo)-[r:CORRIO]->(:Carrera)
         MATCH (hijo)-[:ENTRENADO_POR]->(e:Entrenador)
+
         WHERE e.nombre <> 'Desconocido'
+
         WITH 
             e, 
             avg(r.posicion) AS promedio_posicion, 
-            count(DISTINCT hijo) AS cantidad_caballos
+            count(DISTINCT hijo) AS cantidad_caballos,
+            count(r) AS cantidad_carreras
+
         RETURN 
             e.nombre AS entrenador, 
             promedio_posicion, 
-            cantidad_caballos
+            cantidad_caballos,
+            cantidad_carreras
+
         ORDER BY promedio_posicion ASC
         """
 
@@ -195,7 +243,7 @@ def ranking_entrenadores_por_linaje(session, nombre_padre):
         if not resultados:
             print(f"No hay registros suficientes para '{nombre_padre}'.")
         else:
-            print(f"=== RANKING: ¿Quién entrena mejor a los hijos de '{nombre_padre}'? ===")
+            print(f"RANKING: ¿Quién entrena mejor a los hijos de '{nombre_padre}'? ===")
             for r in resultados:
                 print(
                     f"Entrenador: {r['entrenador']} | "

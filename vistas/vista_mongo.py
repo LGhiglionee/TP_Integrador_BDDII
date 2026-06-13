@@ -78,7 +78,7 @@ def mostrar_mongo(collection):
                 
                 if categoria1 == "Inserción":
                     with st.form("form_insercion"):
-                        st.markdown("**Datos Principales**")
+                        st.markdown("**Inserción de registro en MongoDB**")
 
                         horse_id = st.text_input("ID Caballo (Obligatorio):",key="insert_horse_id_mongo").upper().strip()
                         race_id = st.text_input("ID Carrera (Obligatorio):",key="insert_race_id_mongo").upper().strip()
