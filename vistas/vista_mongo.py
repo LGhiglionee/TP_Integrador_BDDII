@@ -212,10 +212,13 @@ def mostrar_mongo(collection):
                                     tipo_mensaje = "error"
 
                 elif categoria1 == "Borrado":
-                    tipo_borrado = st.radio("Opciones de Eliminación:", ["Eliminar caballo de una carrera especifica", "Eliminar caballo de todas las carreras"])
+                    tipo_borrado = st.radio("Opciones de Eliminación:",
+                                            ["Eliminar caballo de una carrera especifica",
+                                             "Eliminar caballo de todas las carreras"]
+                                            )
                     
                     with st.form("form_borrado"):
-                        if tipo_borrado == "Eliminar un caballo de una carrera especifica":
+                        if tipo_borrado == "Eliminar caballo de una carrera especifica":
                             st.markdown("**Eliminar registro exacto**")
 
                             colBusqA, colBusqB = st.columns(2)

@@ -13,7 +13,7 @@ def actualizar_caballo(collection, horse_id, race_id, campos_a_actualizar):
     return resultado
 
 def borrar_caballo_todas_carreras(collection, horse_id):
-    resultado = collection.delete_one({"horse_id": horse_id})
+    resultado = collection.delete_many({"horse_id": horse_id})
     return resultado
 
 def borrar_caballo_carrera_especifica(collection, horse_id, race_id):
