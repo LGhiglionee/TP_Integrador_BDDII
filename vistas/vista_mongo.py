@@ -3,38 +3,35 @@ import io
 import builtins
 from contextlib import redirect_stdout
 
-# Importaciones de tus consultas
 from motor_mongo.consultas.consultasBasicas_mongo import *
 from motor_mongo.consultas.consultasAvanzadas_mongo import *
-
 from motor_mongo.crud.crud_mongo import *
 
-# --- FUNCIONES AUXILIARES DE VALIDACIÓN ---
 def ejecutar_consulta_y_capturar_output(func, *args, **kwargs):
     f = io.StringIO()
+
     with redirect_stdout(f):
         try:
             func(*args, **kwargs)
         except Exception as e:
             print(f"Error en la ejecución web: {e}")
-    return f.getvalue()
+
+    valor_final = f.getvalue()
+
+    if not valor_final:
+        valor_final ="La consulta se ejecutó pero no devolvió texto de salida."
+
+    return valor_final
 
 def validar_y_tipar_datos(inputs_crudos):
-    """
-    Recibe los inputs de texto, filtra los vacíos y convierte los valores 
-    a sus tipos de datos correctos (int, float, string).
-    Retorna (diccionario_limpio, lista_de_errores).
-    """
     doc_limpio = {}
     errores = []
     
-    # Campos que deben ser Texto (Strings)
     campos_texto = ["horse_id", "horse_name", "race_id", "jockey", "trainer", "father", "mother", "gfather", "finish_time"]
     for campo in campos_texto:
         if inputs_crudos.get(campo):
             doc_limpio[campo] = inputs_crudos[campo]
             
-    # Campos que deben ser Enteros (Int)
     campos_enteros = ["horse_number", "actual_weight", "declared_horse_weight", "draw", "finishing_position", "running_position_1", "running_position_2", "running_position_3"]
     for campo in campos_enteros:
         valor = inputs_crudos.get(campo)
@@ -44,7 +41,6 @@ def validar_y_tipar_datos(inputs_crudos):
             except ValueError:
                 errores.append(f"El campo '{campo}' debe ser un número entero sin letras.")
                 
-    # Campos que deben ser Decimales o Enteros (Float)
     valor_tiempo = inputs_crudos.get("finish_time_seconds")
     if valor_tiempo:
         try:
@@ -54,7 +50,6 @@ def validar_y_tipar_datos(inputs_crudos):
             
     return doc_limpio, errores
 
-# --- VISTA PRINCIPAL ---
 def mostrar_mongo(collection):
     st.header("Consultas Documentales - MongoDB")
     
@@ -62,7 +57,6 @@ def mostrar_mongo(collection):
         st.error("No se pudo conectar a la colección de MongoDB.")
         return
 
-    # Variables de estado
     mensaje_crud = None
     tipo_mensaje = None
     ejecutar_consulta = False
@@ -78,39 +72,38 @@ def mostrar_mongo(collection):
         with st.container(border=True):
             st.markdown("### Panel de Control")
             
-            modo_operacion = st.radio("Modo de Operación", ["Modificar Datos", "Consultas/Simulación"], horizontal=True)
+            modo_operacion = st.radio("Modo de Operación", ["Modificar Datos", "Consultas/Simulación"], horizontal=True,key="modo_operacion_mongo")
             if modo_operacion == "Modificar Datos":
-                categoria1 = st.radio("Operación CRUD", ["Inserción", "Actualización", "Borrado"])
+                categoria1 = st.radio("Operación CRUD", ["Inserción", "Actualización", "Borrado"],key="crud_mongo")
                 
                 if categoria1 == "Inserción":
                     with st.form("form_insercion"):
                         st.markdown("**Datos Principales**")
-                        
-                        # Acá le ponemos explícitamente (Obligatorio) para que se vea claro en la pantalla
-                        horse_id = st.text_input("ID Caballo (Obligatorio):").upper().strip()
-                        race_id = st.text_input("ID Carrera (Obligatorio):").upper().strip()
-                        horse_name = st.text_input("Nombre Caballo (Obligatorio):").upper().strip()
-                        
-                        jockey = st.text_input("Jockey:").strip()
-                        trainer = st.text_input("Entrenador:").strip()
-                        
+
+                        horse_id = st.text_input("ID Caballo (Obligatorio):",key="insert_horse_id_mongo").upper().strip()
+                        race_id = st.text_input("ID Carrera (Obligatorio):",key="insert_race_id_mongo").upper().strip()
+                        horse_name = st.text_input("Nombre Caballo (Obligatorio):",key="insert_horse_name_mongo").upper().strip()
+                        jockey = st.text_input("Jockey:",key="insert_jockey_mongo").strip()
+                        trainer = st.text_input("Entrenador:",key="insert_trainer_mongo").strip()
+
                         with st.expander("Ver campos técnicos opcionales (Tiempos, Posiciones, etc.)"):
                             colA, colB = st.columns(2)
                             with colA:
-                                horse_number = st.text_input("N° Caballo (Int):").strip()
-                                father = st.text_input("Padre:").strip()
-                                mother = st.text_input("Madre:").strip()
-                                gfather = st.text_input("Abuelo:").strip()
-                                actual_weight = st.text_input("Peso Actual (Int):").strip()
-                                declared_weight = st.text_input("Peso Dec. (Int):").strip()
+                                horse_number = st.text_input("N° Caballo (Int):",key="insert_horse_number_mongo").strip()
+                                father = st.text_input("Padre:",key="insert_father_mongo").strip()
+                                mother = st.text_input("Madre:",key="insert_mother_mongo").strip()
+                                gfather = st.text_input("Abuelo:",key="insert_gfather_mongo").strip()
+                                actual_weight = st.text_input("Peso Actual (Int):",key="insert_actual_weight_mongo").strip()
+                                declared_weight = st.text_input("Peso Declarado (Int):",key="insert_declared_weight_mongo").strip()
+
                             with colB:
-                                draw = st.text_input("Sorteo (Int):").strip()
-                                finish_pos = st.text_input("Pos. Final (Int):").strip()
-                                run_pos_1 = st.text_input("Pos. C1 (Int):").strip()
-                                run_pos_2 = st.text_input("Pos. C2 (Int):").strip()
-                                run_pos_3 = st.text_input("Pos. C3 (Int):").strip()
-                                finish_time = st.text_input("Tiempo (String, ej: 1.09.98):").strip()
-                                finish_time_sec = st.text_input("Tiempo en Seg (Numérico):").strip()
+                                draw = st.text_input("Sorteo (Int):",key="insert_draw_mongo").strip()
+                                finish_pos = st.text_input("Pos. Final (Int):",key="insert_finish_pos_mongo").strip()
+                                run_pos_1 = st.text_input("Pos. C1 (Int):",key="insert_run_pos_1_mongo").strip()
+                                run_pos_2 = st.text_input("Pos. C2 (Int):",key="insert_run_pos_2_mongo").strip()
+                                run_pos_3 = st.text_input("Pos. C3 (Int):",key="insert_run_pos_3_mongo").strip()
+                                finish_time = st.text_input("Tiempo (String, ej: 1.09.98):",key="insert_finish_time_mongo").strip()
+                                finish_time_sec = st.text_input("Tiempo en Seg (Numérico):",key="insert_finish_time_sec_mongo").strip()
                         
                         btn_insertar = st.form_submit_button("Insertar Documento", type="primary", use_container_width=True)
                         
@@ -150,35 +143,36 @@ def mostrar_mongo(collection):
                 elif categoria1 == "Actualización":
                     with st.form("form_actualizacion"):
                         st.markdown("**1. Buscar Registro Exacto:**")
+
                         colBusqA, colBusqB = st.columns(2)
                         with colBusqA:
-                            horse_id_busqueda = st.text_input("ID Caballo (Obligatorio):").upper().strip()
+                            horse_id_busqueda = st.text_input("ID Caballo (Obligatorio):",key="update_horse_id_busqueda_mongo").upper().strip()
                         with colBusqB:
-                            race_id_busqueda = st.text_input("ID Carrera (Obligatorio):").upper().strip()
+                            race_id_busqueda = st.text_input("ID Carrera (Obligatorio):",key="update_race_id_busqueda_mongo").upper().strip()
 
                         st.markdown("**2. Nuevos Datos (dejá en blanco lo que no quieras cambiar):**")
                         
-                        upd_name = st.text_input("Nuevo Nombre:").upper().strip()
-                        upd_jockey = st.text_input("Nuevo Jockey:").strip()
+                        upd_name = st.text_input("Nuevo Nombre:",key="update_name_mongo").upper().strip()
+                        upd_jockey = st.text_input("Nuevo Jockey:",key="update_jockey_mongo").strip()
                         
                         with st.expander("Ver campos técnicos a modificar"):
                             colA, colB = st.columns(2)
                             with colA:
-                                upd_number = st.text_input("Nuevo N° Caballo (Int):").strip()
-                                upd_trainer = st.text_input("Nuevo Entrenador:").strip()
-                                upd_father = st.text_input("Nuevo Padre:").strip()
-                                upd_mother = st.text_input("Nueva Madre:").strip()
-                                upd_gfather = st.text_input("Nuevo Abuelo:").strip()
-                                upd_actual_weight = st.text_input("Nuevo Peso Actual (Int):").strip()
+                                upd_number = st.text_input("Nuevo N° Caballo (Int):",key="update_number_mongo").strip()
+                                upd_trainer = st.text_input("Nuevo Entrenador:",key="update_trainer_mongo").strip()
+                                upd_father = st.text_input("Nuevo Padre:",key="update_father_mongo").strip()
+                                upd_mother = st.text_input("Nueva Madre:",key="update_mother_mongo").strip()
+                                upd_gfather = st.text_input("Nuevo Abuelo:",key="update_gfather_mongo").strip()
+                                upd_actual_weight = st.text_input("Nuevo Peso Actual (Int):", key="update_actual_weight_mongo").strip()
                             with colB:
-                                upd_declared_weight = st.text_input("Nuevo Peso Dec (Int):").strip()
-                                upd_draw = st.text_input("Nuevo Sorteo (Int):").strip()
-                                upd_finish_pos = st.text_input("Nueva Pos. Final (Int):").strip()
-                                upd_run_pos_1 = st.text_input("Nueva Pos. C1 (Int):").strip()
-                                upd_run_pos_2 = st.text_input("Nueva Pos. C2 (Int):").strip()
-                                upd_run_pos_3 = st.text_input("Nueva Pos. C3 (Int):").strip()
-                                upd_time = st.text_input("Nuevo Tiempo (String):").strip()
-                                upd_time_sec = st.text_input("Nuevo Tiempo Seg (Numérico):").strip()
+                                upd_declared_weight = st.text_input("Nuevo Peso Dec (Int):",key="update_declared_weight_mongo").strip()
+                                upd_draw = st.text_input("Nuevo Sorteo (Int):",key="update_draw_mongo").strip()
+                                upd_finish_pos = st.text_input("Nueva Pos. Final (Int):",key="update_finish_pos_mongo").strip()
+                                upd_run_pos_1 = st.text_input("Nueva Pos. C1 (Int):",key="update_run_pos_1_mongo").strip()
+                                upd_run_pos_2 = st.text_input("Nueva Pos. C2 (Int):",key="update_run_pos_2_mongo").strip()
+                                upd_run_pos_3 = st.text_input("Nueva Pos. C3 (Int):",key="update_run_pos_3_mongo").strip()
+                                upd_time = st.text_input("Nuevo Tiempo (String):", key="update_time_mongo").strip()
+                                upd_time_sec = st.text_input("Nuevo Tiempo Seg (Numérico):",key="update_time_sec_mongo").strip()
                         
                         btn_actualizar = st.form_submit_button("Actualizar Documento", type="primary", use_container_width=True)
                         
@@ -203,13 +197,16 @@ def mostrar_mongo(collection):
                                     
                                     if errores_validacion:
                                         tipo_mensaje = "errores_multiples"
+
                                     elif campos_a_actualizar:
                                         actualizar_caballo(collection, horse_id_busqueda, race_id_busqueda, campos_a_actualizar)
                                         mensaje_crud = f"Se actualizaron {len(campos_a_actualizar)} campos para el caballo {horse_id_busqueda} en la carrera {race_id_busqueda}."
                                         tipo_mensaje = "success"
+
                                     else:
                                         mensaje_crud = "El registro existe, pero no ingresaste ningún dato nuevo para actualizar."
                                         tipo_mensaje = "warning"
+
                                 else:
                                     mensaje_crud = f"No se encontró al caballo {horse_id_busqueda} participando en la carrera {race_id_busqueda}."
                                     tipo_mensaje = "error"
@@ -220,22 +217,26 @@ def mostrar_mongo(collection):
                     with st.form("form_borrado"):
                         if tipo_borrado == "Eliminar un caballo de una carrera especifica":
                             st.markdown("**Eliminar registro exacto**")
+
                             colBusqA, colBusqB = st.columns(2)
                             with colBusqA:
-                                horse_id_borrar = st.text_input("ID Caballo (Obligatorio):").upper().strip()
+                                horse_id_borrar = st.text_input("ID Caballo (Obligatorio):",key="delete_horse_id_mongo").upper().strip()
                             with colBusqB:
-                                race_id_borrar = st.text_input("ID Carrera (Obligatorio):").upper().strip()
+                                race_id_borrar = st.text_input("ID Carrera (Obligatorio):",key="delete_race_id_mongo").upper().strip()
                         else:
                             st.markdown("**Eliminar historial completo**")
                             st.warning("Esto eliminará todas las carreras registradas de este caballo en la base de datos.")
-                            horse_id_borrar = st.text_input("ID Caballo (Obligatorio):").upper().strip()
+
+                            horse_id_borrar = st.text_input("ID Caballo (Obligatorio):",key="delete_all_horse_id_mongo").upper().strip()
+                            race_id_borrar = None
                             
                         btn_borrar = st.form_submit_button("Ejecutar Eliminación", type="primary", use_container_width=True)
                         
                         if btn_borrar:
-                            if tipo_borrado == "Eliminar una caballo de una carrera especifica":
+                            if tipo_borrado == "Eliminar caballo de una carrera especifica":
                                 if horse_id_borrar and race_id_borrar:
                                     resultado = borrar_caballo_carrera_especifica(collection, horse_id_borrar, race_id_borrar)
+
                                     if resultado.deleted_count > 0:
                                         mensaje_crud = f"Se eliminó correctamente el registro del caballo {horse_id_borrar} en la carrera {race_id_borrar}."
                                         tipo_mensaje = "success"
@@ -245,6 +246,7 @@ def mostrar_mongo(collection):
                                 else:
                                     mensaje_crud = "Ambos IDs (Caballo y Carrera) son obligatorios."
                                     tipo_mensaje = "warning"
+
                             else:
                                 if horse_id_borrar:
                                     resultado = borrar_caballo_todas_carreras(collection, horse_id_borrar)
@@ -259,38 +261,58 @@ def mostrar_mongo(collection):
                                     tipo_mensaje = "warning"
 
             elif modo_operacion == "Consultas/Simulación":
-                categoria2 = st.radio("Tipo de consulta", ["Simples", "Complejas", "Historial por Nombre"])
+                categoria2 = st.radio("Tipo de consulta", ["Simples", "Complejas", "Historial por Nombre"],key="tipo_consulta_mongo")
                 
                 if categoria2 == "Simples":
-                    opcion = st.selectbox("Selecciona la consulta simple:", ["1. Obtener todos los caballos entrenados por P F YIU", "2. Todos los caballos que ganaron alguna carrera", "3. Caballos que pesan menos de 1000 libras", "4. Cantidad de carreras que se corrieron", "5. Caballos con tiempos menores a 1.23.00"])
-                    ejecutar_consulta = st.button("Ejecutar Consulta Simple", use_container_width=True, type="primary")
+                    opcion = st.selectbox("Seleccione la consulta simple:",
+                  [
+                        "1. Obtener todos los caballos entrenados por P F YIU",
+                        "2. Todos los caballos que ganaron alguna carrera",
+                        "3. Caballos que pesan menos de 1000 libras",
+                        "4. Cantidad de carreras que se corrieron",
+                        "5. Caballos con tiempos menores a 1.23.00"
+                    ],
+                    key="select_simple_mongo"
+                )
+
+                    ejecutar_consulta = st.button("Ejecutar Consulta Simple", use_container_width=True, type="primary",key="btn_simple_mongo")
                 
                 elif categoria2 == "Complejas":
-                    opcion = st.selectbox("Selecciona la consulta compleja:", ["1. Tiempo promedio de todos los caballos", "2. Tiempo promedio de carrera de los caballos entrenados por P F YIU", "3. Caballos con número 10 y tiempo menor a 1.22.70", "4. Listar todos los caballos cuyo nombre comience con A", "5. TOP 10 de tiempos más rápidos"])
-                    ejecutar_consulta = st.button("Ejecutar Consulta Compleja", use_container_width=True, type="primary")
+                    opcion = st.selectbox("Seleccione la consulta compleja:",
+                        [
+                        "1. Tiempo promedio de todos los caballos",
+                        "2. Tiempo promedio de carrera de los caballos entrenados por P F YIU",
+                        "3. Caballos con número 10 y tiempo menor a 1.22.70",
+                        "4. Listar todos los caballos cuyo nombre comience con A",
+                        "5. TOP 10 de tiempos más rápidos"
+                        ],
+                      key="select_compleja_mongo"
+                        )
+                    ejecutar_consulta = st.button("Ejecutar Consulta Compleja", use_container_width=True, type="primary", key="btn_compleja_mongo")
                     
                 elif categoria2 == "Historial por Nombre":
                     st.info("Esta consulta requiere un parámetro de búsqueda.")
-                    nombre_caballo = st.text_input("Ingresar nombre del caballo:", value="").upper().strip()
-                    ejecutar_consulta = st.button("Buscar Historial", use_container_width=True, type="primary")
+                    nombre_caballo = st.text_input("Ingresar nombre del caballo:", value="",key="historial_nombre_mongo").upper().strip()
+                    ejecutar_consulta = st.button("Buscar Historial", use_container_width=True, type="primary",key="btn_historial_mongo")
 
     with col2:
         st.subheader("Consola de Salida")
         
-        # 1. Mostrar resultados del CRUD
         if tipo_mensaje == "errores_multiples":
             st.error("Se encontraron errores de validación de datos. Corregilos para continuar:")
+
             for error in errores_validacion:
                 st.warning(f"{error}")
+
         elif mensaje_crud:
             if tipo_mensaje == "success": st.success(mensaje_crud)
             elif tipo_mensaje == "error": st.error(mensaje_crud)
             elif tipo_mensaje == "warning": st.warning(mensaje_crud)
 
-        # 2. Lógica de Consultas
         if ejecutar_consulta:
             with st.spinner('Buscando en MongoDB...'):
                 if modo_operacion == "Consultas/Simulación":
+
                     if categoria2 == "Simples" and opcion:
                         if opcion.startswith("1."): output_resultado = ejecutar_consulta_y_capturar_output(caballosEntrenadosP_F_YIU, collection)
                         elif opcion.startswith("2."): output_resultado = ejecutar_consulta_y_capturar_output(caballosGanadores, collection)
@@ -310,9 +332,11 @@ def mostrar_mongo(collection):
                             st.warning("Por favor, ingrese un nombre válido.")
                         else:
                             input_original = builtins.input
-                            builtins.input = lambda *args: nombre_caballo                        
-                            output_resultado = ejecutar_consulta_y_capturar_output(buscarHistorialCaballo, collection)
-                            builtins.input = input_original
+                            try:
+                                builtins.input = lambda *args: nombre_caballo
+                                output_resultado = ejecutar_consulta_y_capturar_output(buscarHistorialCaballo, collection)
+                            finally:
+                                builtins.input = input_original
 
         # Renderizado estético del resultado
         if output_resultado:
