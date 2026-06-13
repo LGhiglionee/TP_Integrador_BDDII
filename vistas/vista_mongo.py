@@ -54,14 +54,11 @@ def validar_y_tipar_datos(inputs_crudos):
     La función:
     - descarta campos vacíos;
     - convierte campos numéricos al tipo correspondiente;
-    - acumula errores de validación para mostrarlos en pantalla.
 
     Retorna:
-    - doc_limpio: diccionario con los datos listos para insertar o actualizar;
-    - errores: lista de mensajes de error detectados.
+    - doc_limpio: diccionario con los datos listos para insertar o actualizar.
     """
     doc_limpio = {}
-    errores = []
 
     # Campos almacenados como texto en MongoDB.
     campos_texto = ["horse_id", "horse_name", "race_id", "jockey", "trainer", "father", "mother", "gfather", "finish_time"]
@@ -77,17 +74,25 @@ def validar_y_tipar_datos(inputs_crudos):
             try:
                 doc_limpio[campo] = int(valor)
             except ValueError:
-                errores.append(f"El campo '{campo}' debe ser un número entero sin letras.")
+                st.error(f"Error: El valor ingresado en '{campo}' no es un número entero válido. Corregilo para continuar.")
+                return None
 
-    # Campo decimal correspondiente al tiempo final expresado en segundos.
-    valor_tiempo = inputs_crudos.get("finish_time_seconds")
-    if valor_tiempo:
+    #Pasa el finishing time directo a segundos
+    if doc_limpio.get("finish_time"):
+        tiempo_str = doc_limpio["finish_time"]
         try:
-            doc_limpio["finish_time_seconds"] = float(valor_tiempo.replace(',', '.'))
+            partes = tiempo_str.replace(',', '.').split('.')
+            if len(partes) == 3: # Formato Minutos.Segundos.Centésimas (ej: 1.09.98)
+                doc_limpio["finish_time_seconds"] = float(int(partes[0]) * 60 + int(partes[1]) + int(partes[2]) / (10 ** len(partes[2])))
+            elif len(partes) == 2: # Formato Segundos.Centésimas (ej: 69.98)
+                doc_limpio["finish_time_seconds"] = float(int(partes[0]) + int(partes[1]) / (10 ** len(partes[1])))
+            else: # Formato solo segundos (ej: 70)
+                doc_limpio["finish_time_seconds"] = float(tiempo_str)
         except ValueError:
-            errores.append("El campo 'finish_time_seconds' debe ser un número válido.")
-            
-    return doc_limpio, errores
+            st.error("Error: El formato de 'Tiempo' no es válido. Usá el formato 'Minutos.Segundos.Centésimas' (ej: 1.09.98).")
+            return None
+
+    return doc_limpio
 
 # =========================================================
 # VISTA PRINCIPAL DE MONGODB
@@ -110,14 +115,11 @@ def mostrar_mongo(collection):
         return
 
     # Variables generales de estado para la vista.
-    mensaje_crud = None
-    tipo_mensaje = None
     ejecutar_consulta = False
     output_resultado = ""
     opcion = None
     categoria2 = None
     nombre_caballo = ""
-    errores_validacion = []
 
     # Distribución principal:columna izquierda para controles, columna derecha para salida.
     col1, col2 = st.columns([1, 1.8])
@@ -169,15 +171,13 @@ def mostrar_mongo(collection):
                                 run_pos_2 = st.text_input("Pos. C2 (Int):",key="insert_run_pos_2_mongo").strip()
                                 run_pos_3 = st.text_input("Pos. C3 (Int):",key="insert_run_pos_3_mongo").strip()
                                 finish_time = st.text_input("Tiempo (String, ej: 1.09.98):",key="insert_finish_time_mongo").strip()
-                                finish_time_sec = st.text_input("Tiempo en Seg (Numérico):",key="insert_finish_time_sec_mongo").strip()
                         
                         btn_insertar = st.form_submit_button("Insertar Documento", type="primary", use_container_width=True)
                         
                         if btn_insertar:
                             # Validación de campos obligatorios.
                             if not horse_id or not race_id or not horse_name:
-                                mensaje_crud = "Error: No podés insertar el registro. El 'ID Caballo', 'ID Carrera' y 'Nombre' son obligatorios."
-                                tipo_mensaje = "error"
+                                st.error("Error: No podés insertar el registro. El 'ID Caballo', 'ID Carrera' y 'Nombre' son obligatorios.")
                             else:
                                 inputs_crudos = {
                                     "horse_id": horse_id, "horse_name": horse_name, "horse_number": horse_number,
@@ -186,27 +186,19 @@ def mostrar_mongo(collection):
                                     "actual_weight": actual_weight, "declared_horse_weight": declared_weight,
                                     "draw": draw, "finishing_position": finish_pos,
                                     "running_position_1": run_pos_1, "running_position_2": run_pos_2,
-                                    "running_position_3": run_pos_3, "finish_time": finish_time,
-                                    "finish_time_seconds": finish_time_sec
+                                    "running_position_3": run_pos_3, "finish_time": finish_time
                                 }
                                 
-                                nuevo_doc, errores_validacion = validar_y_tipar_datos(inputs_crudos)
+                                nuevo_doc = validar_y_tipar_datos(inputs_crudos)
                                 
-                                if errores_validacion:
-                                    tipo_mensaje = "errores_multiples"
-                                elif nuevo_doc:
+                                if nuevo_doc is not None:
                                     # Se evita duplicar un caballo dentro de la misma carrera.
                                     existe = buscar_caballo_por_id_y_carrera(collection, horse_id, race_id)
                                     if existe:
-                                        mensaje_crud = f"El caballo {horse_id} ya está registrado en la carrera {race_id}."
-                                        tipo_mensaje = "error"
+                                        st.error(f"El caballo {horse_id} ya está registrado en la carrera {race_id}.")
                                     else:
                                         insertar_caballo(collection, nuevo_doc)
-                                        mensaje_crud = f"Se insertó el documento exitosamente con {len(nuevo_doc)} campos válidos."
-                                        tipo_mensaje = "success"
-                                else:
-                                    mensaje_crud = "Error inesperado al procesar los datos."
-                                    tipo_mensaje = "warning"
+                                        st.success(f"Se insertó el documento exitosamente con {len(nuevo_doc)} campos válidos.")
 
                 # -------------------------------------------------
                 # ACTUALIZACIÓN DE DOCUMENTOS
@@ -243,14 +235,12 @@ def mostrar_mongo(collection):
                                 upd_run_pos_2 = st.text_input("Nueva Pos. C2 (Int):",key="update_run_pos_2_mongo").strip()
                                 upd_run_pos_3 = st.text_input("Nueva Pos. C3 (Int):",key="update_run_pos_3_mongo").strip()
                                 upd_time = st.text_input("Nuevo Tiempo (String):", key="update_time_mongo").strip()
-                                upd_time_sec = st.text_input("Nuevo Tiempo Seg (Numérico):",key="update_time_sec_mongo").strip()
                         
                         btn_actualizar = st.form_submit_button("Actualizar Documento", type="primary", use_container_width=True)
                         
                         if btn_actualizar:
                             if not horse_id_busqueda or not race_id_busqueda:
-                                mensaje_crud = "Tanto el ID del caballo como el ID de la carrera son obligatorios."
-                                tipo_mensaje = "error"
+                                st.error("Tanto el ID del caballo como el ID de la carrera son obligatorios.")
                             else:
                                 caballo_existe = buscar_caballo_por_id_y_carrera(collection, horse_id_busqueda, race_id_busqueda)
                                 if caballo_existe:
@@ -261,26 +251,20 @@ def mostrar_mongo(collection):
                                         "declared_horse_weight": upd_declared_weight, "draw": upd_draw,
                                         "finishing_position": upd_finish_pos, "running_position_1": upd_run_pos_1,
                                         "running_position_2": upd_run_pos_2, "running_position_3": upd_run_pos_3,
-                                        "finish_time": upd_time, "finish_time_seconds": upd_time_sec
+                                        "finish_time": upd_time
                                     }
                                     
-                                    campos_a_actualizar, errores_validacion = validar_y_tipar_datos(inputs_crudos_upd)
+                                    campos_a_actualizar = validar_y_tipar_datos(inputs_crudos_upd)
                                     
-                                    if errores_validacion:
-                                        tipo_mensaje = "errores_multiples"
-
-                                    elif campos_a_actualizar:
+                                    if campos_a_actualizar: # Se actualiza si hay datos y no devolvió None
                                         actualizar_caballo(collection, horse_id_busqueda, race_id_busqueda, campos_a_actualizar)
-                                        mensaje_crud = f"Se actualizaron {len(campos_a_actualizar)} campos para el caballo {horse_id_busqueda} en la carrera {race_id_busqueda}."
-                                        tipo_mensaje = "success"
+                                        st.success(f"Se actualizaron {len(campos_a_actualizar)} campos para el caballo {horse_id_busqueda} en la carrera {race_id_busqueda}.")
 
-                                    else:
-                                        mensaje_crud = "El registro existe, pero no ingresaste ningún dato nuevo para actualizar."
-                                        tipo_mensaje = "warning"
+                                    elif campos_a_actualizar is not None:
+                                        st.warning("El registro existe, pero no ingresaste ningún dato nuevo para actualizar.")
 
                                 else:
-                                    mensaje_crud = f"No se encontró al caballo {horse_id_busqueda} participando en la carrera {race_id_busqueda}."
-                                    tipo_mensaje = "error"
+                                    st.error(f"No se encontró al caballo {horse_id_busqueda} participando en la carrera {race_id_busqueda}.")
 
                 # -------------------------------------------------
                 # BORRADO DE DOCUMENTOS
@@ -315,27 +299,21 @@ def mostrar_mongo(collection):
                                     resultado = borrar_caballo_carrera_especifica(collection, horse_id_borrar, race_id_borrar)
 
                                     if resultado.deleted_count > 0:
-                                        mensaje_crud = f"Se eliminó correctamente el registro del caballo {horse_id_borrar} en la carrera {race_id_borrar}."
-                                        tipo_mensaje = "success"
+                                        st.success(f"Se eliminó correctamente el registro del caballo {horse_id_borrar} en la carrera {race_id_borrar}.")
                                     else:
-                                        mensaje_crud = f"No se encontró al caballo {horse_id_borrar} participando en la carrera {race_id_borrar}."
-                                        tipo_mensaje = "error"
+                                        st.error(f"No se encontró al caballo {horse_id_borrar} participando en la carrera {race_id_borrar}.")
                                 else:
-                                    mensaje_crud = "Ambos IDs (Caballo y Carrera) son obligatorios."
-                                    tipo_mensaje = "warning"
+                                    st.warning("Ambos IDs (Caballo y Carrera) son obligatorios.")
 
                             else:
                                 if horse_id_borrar:
                                     resultado = borrar_caballo_todas_carreras(collection, horse_id_borrar)
                                     if resultado.deleted_count > 0:
-                                        mensaje_crud = f"Se eliminaron {resultado.deleted_count} registros totales del caballo {horse_id_borrar}."
-                                        tipo_mensaje = "success"
+                                        st.success(f"Se eliminaron {resultado.deleted_count} registros totales del caballo {horse_id_borrar}.")
                                     else:
-                                        mensaje_crud = f"No se encontró ningún registro del caballo con ID {horse_id_borrar}."
-                                        tipo_mensaje = "error"
+                                        st.error(f"No se encontró ningún registro del caballo con ID {horse_id_borrar}.")
                                 else:
-                                    mensaje_crud = "El ID del Caballo es obligatorio."
-                                    tipo_mensaje = "warning"
+                                    st.warning("El ID del Caballo es obligatorio.")
 
             # =====================================================
             # CONSULTAS Y SIMULACIÓN
@@ -380,18 +358,6 @@ def mostrar_mongo(collection):
     # =========================================================
     with col2:
         st.subheader("Consola de Salida")
-
-        # Mensajes generados por operaciones CRUD.
-        if tipo_mensaje == "errores_multiples":
-            st.error("Se encontraron errores de validación de datos. Corregilos para continuar:")
-
-            for error in errores_validacion:
-                st.warning(f"{error}")
-
-        elif mensaje_crud:
-            if tipo_mensaje == "success": st.success(mensaje_crud)
-            elif tipo_mensaje == "error": st.error(mensaje_crud)
-            elif tipo_mensaje == "warning": st.warning(mensaje_crud)
 
         # Ejecución de consultas seleccionadas desde el panel izquierdo.
         if ejecutar_consulta:
@@ -443,5 +409,5 @@ def mostrar_mongo(collection):
                 use_container_width=True
             )
             st.code(output_resultado, language="text")
-        elif not mensaje_crud and tipo_mensaje != "errores_multiples":
+        elif not ejecutar_consulta:
             st.info("Seleccione una operación del panel izquierdo para visualizar los datos aquí.")
