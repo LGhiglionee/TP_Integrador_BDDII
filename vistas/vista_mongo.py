@@ -143,177 +143,171 @@ def mostrar_mongo(collection):
                 # INSERCIÓN DE DOCUMENTOS
                 # -------------------------------------------------
                 if categoria1 == "Inserción":
-                    with st.form("form_insercion"):
-                        st.markdown("**Inserción de registro en MongoDB**")
+                    st.markdown("**Inserción de registro en MongoDB**")
 
-                        # Datos mínimos necesarios para identificar un registro.
-                        horse_id = st.text_input("ID Caballo (Obligatorio):",key="insert_horse_id_mongo").upper().strip()
-                        race_id = st.text_input("ID Carrera (Obligatorio):",key="insert_race_id_mongo").upper().strip()
-                        horse_name = st.text_input("Nombre Caballo (Obligatorio):",key="insert_horse_name_mongo").upper().strip()
-                        jockey = st.text_input("Jockey:",key="insert_jockey_mongo").strip()
-                        trainer = st.text_input("Entrenador:",key="insert_trainer_mongo").strip()
+                    # Datos mínimos necesarios para identificar un registro.
+                    horse_id = st.text_input("ID Caballo (Obligatorio):",key="insert_horse_id_mongo").upper().strip()
+                    race_id = st.text_input("ID Carrera (Obligatorio):",key="insert_race_id_mongo").upper().strip()
+                    horse_name = st.text_input("Nombre Caballo (Obligatorio):",key="insert_horse_name_mongo").upper().strip()
+                    jockey = st.text_input("Jockey:",key="insert_jockey_mongo").strip()
+                    trainer = st.text_input("Entrenador:",key="insert_trainer_mongo").strip()
 
-                        # Campos opcionales provenientes del dataset original.
-                        with st.expander("Ver campos técnicos opcionales (Tiempos, Posiciones, etc.)"):
-                            colA, colB = st.columns(2)
-                            with colA:
-                                horse_number = st.text_input("N° Caballo (Int):",key="insert_horse_number_mongo").strip()
-                                father = st.text_input("Padre:",key="insert_father_mongo").strip()
-                                mother = st.text_input("Madre:",key="insert_mother_mongo").strip()
-                                gfather = st.text_input("Abuelo:",key="insert_gfather_mongo").strip()
-                                actual_weight = st.text_input("Peso Actual (Int):",key="insert_actual_weight_mongo").strip()
-                                declared_weight = st.text_input("Peso Declarado (Int):",key="insert_declared_weight_mongo").strip()
+                    # Campos opcionales provenientes del dataset original.
+                    with st.expander("Ver campos técnicos opcionales (Tiempos, Posiciones, etc.)"):
+                        colA, colB = st.columns(2)
+                        with colA:
+                            horse_number = st.text_input("N° Caballo (Int):",key="insert_horse_number_mongo").strip()
+                            father = st.text_input("Padre:",key="insert_father_mongo").strip()
+                            mother = st.text_input("Madre:",key="insert_mother_mongo").strip()
+                            gfather = st.text_input("Abuelo:",key="insert_gfather_mongo").strip()
+                            actual_weight = st.text_input("Peso Actual (Int):",key="insert_actual_weight_mongo").strip()
+                            declared_weight = st.text_input("Peso Declarado (Int):",key="insert_declared_weight_mongo").strip()
 
-                            with colB:
-                                draw = st.text_input("Sorteo (Int):",key="insert_draw_mongo").strip()
-                                finish_pos = st.text_input("Pos. Final (Int):",key="insert_finish_pos_mongo").strip()
-                                run_pos_1 = st.text_input("Pos. C1 (Int):",key="insert_run_pos_1_mongo").strip()
-                                run_pos_2 = st.text_input("Pos. C2 (Int):",key="insert_run_pos_2_mongo").strip()
-                                run_pos_3 = st.text_input("Pos. C3 (Int):",key="insert_run_pos_3_mongo").strip()
-                                finish_time = st.text_input("Tiempo (String, ej: 1.09.98):",key="insert_finish_time_mongo").strip()
-                        
-                        btn_insertar = st.form_submit_button("Insertar Documento", type="primary", use_container_width=True)
-                        
-                        if btn_insertar:
-                            # Validación de campos obligatorios.
-                            if not horse_id or not race_id or not horse_name:
-                                st.error("Error: No podés insertar el registro. El 'ID Caballo', 'ID Carrera' y 'Nombre' son obligatorios.")
-                            else:
-                                inputs_crudos = {
-                                    "horse_id": horse_id, "horse_name": horse_name, "horse_number": horse_number,
-                                    "race_id": race_id, "jockey": jockey, "trainer": trainer, 
-                                    "father": father, "mother": mother, "gfather": gfather,
-                                    "actual_weight": actual_weight, "declared_horse_weight": declared_weight,
-                                    "draw": draw, "finishing_position": finish_pos,
-                                    "running_position_1": run_pos_1, "running_position_2": run_pos_2,
-                                    "running_position_3": run_pos_3, "finish_time": finish_time
-                                }
-                                
-                                nuevo_doc = validar_y_tipar_datos(inputs_crudos)
-                                
-                                if nuevo_doc is not None:
-                                    # Se evita duplicar un caballo dentro de la misma carrera.
-                                    existe = buscar_caballo_por_id_y_carrera(collection, horse_id, race_id)
-                                    if existe:
-                                        st.error(f"El caballo {horse_id} ya está registrado en la carrera {race_id}.")
-                                    else:
-                                        insertar_caballo(collection, nuevo_doc)
-                                        st.success(f"Se insertó el documento exitosamente con {len(nuevo_doc)} campos válidos.")
+                        with colB:
+                            draw = st.text_input("Sorteo (Int):",key="insert_draw_mongo").strip()
+                            finish_pos = st.text_input("Pos. Final (Int):",key="insert_finish_pos_mongo").strip()
+                            run_pos_1 = st.text_input("Pos. C1 (Int):",key="insert_run_pos_1_mongo").strip()
+                            run_pos_2 = st.text_input("Pos. C2 (Int):",key="insert_run_pos_2_mongo").strip()
+                            run_pos_3 = st.text_input("Pos. C3 (Int):",key="insert_run_pos_3_mongo").strip()
+                            finish_time = st.text_input("Tiempo (String, ej: 1.09.98):",key="insert_finish_time_mongo").strip()
+
+                    btn_insertar = st.button("Insertar Documento", type="primary", use_container_width=True,key="insertar_insc_mongo")
+
+                    if btn_insertar:
+                        # Validación de campos obligatorios.
+                        if not horse_id or not race_id or not horse_name:
+                            st.error("Error: No podés insertar el registro. El 'ID Caballo', 'ID Carrera' y 'Nombre' son obligatorios.")
+                        else:
+                            inputs_crudos = {
+                                "horse_id": horse_id, "horse_name": horse_name, "horse_number": horse_number,
+                                "race_id": race_id, "jockey": jockey, "trainer": trainer,
+                                "father": father, "mother": mother, "gfather": gfather,
+                                "actual_weight": actual_weight, "declared_horse_weight": declared_weight,
+                                "draw": draw, "finishing_position": finish_pos,
+                                "running_position_1": run_pos_1, "running_position_2": run_pos_2,
+                                "running_position_3": run_pos_3, "finish_time": finish_time
+                            }
+
+                            nuevo_doc = validar_y_tipar_datos(inputs_crudos)
+
+                            if nuevo_doc is not None:
+                                # Se evita duplicar un caballo dentro de la misma carrera.
+                                existe = buscar_caballo_por_id_y_carrera(collection, horse_id, race_id)
+                                if existe:
+                                    st.error(f"El caballo {horse_id} ya está registrado en la carrera {race_id}.")
+                                else:
+                                    insertar_caballo(collection, nuevo_doc)
+                                    st.success(f"Se insertó el documento exitosamente con {len(nuevo_doc)} campos válidos.")
 
                 # -------------------------------------------------
                 # ACTUALIZACIÓN DE DOCUMENTOS
                 # -------------------------------------------------
                 elif categoria1 == "Actualización":
-                    with st.form("form_actualizacion"):
-                        st.markdown("**1. Buscar Registro Exacto:**")
+                    st.markdown("**1. Buscar Registro Exacto:**")
 
-                        colBusqA, colBusqB = st.columns(2)
-                        with colBusqA:
-                            horse_id_busqueda = st.text_input("ID Caballo (Obligatorio):",key="update_horse_id_busqueda_mongo").upper().strip()
-                        with colBusqB:
-                            race_id_busqueda = st.text_input("ID Carrera (Obligatorio):",key="update_race_id_busqueda_mongo").upper().strip()
+                    colBusqA, colBusqB = st.columns(2)
+                    with colBusqA:
+                        horse_id_busqueda = st.text_input("ID Caballo (Obligatorio):",key="update_horse_id_busqueda_mongo").upper().strip()
+                    with colBusqB:
+                        race_id_busqueda = st.text_input("ID Carrera (Obligatorio):",key="update_race_id_busqueda_mongo").upper().strip()
 
-                        st.markdown("**2. Nuevos Datos (dejá en blanco lo que no quieras cambiar):**")
-                        
-                        upd_name = st.text_input("Nuevo Nombre:",key="update_name_mongo").upper().strip()
-                        upd_jockey = st.text_input("Nuevo Jockey:",key="update_jockey_mongo").strip()
-                        
-                        with st.expander("Ver campos técnicos a modificar"):
-                            colA, colB = st.columns(2)
-                            with colA:
-                                upd_number = st.text_input("Nuevo N° Caballo (Int):",key="update_number_mongo").strip()
-                                upd_trainer = st.text_input("Nuevo Entrenador:",key="update_trainer_mongo").strip()
-                                upd_father = st.text_input("Nuevo Padre:",key="update_father_mongo").strip()
-                                upd_mother = st.text_input("Nueva Madre:",key="update_mother_mongo").strip()
-                                upd_gfather = st.text_input("Nuevo Abuelo:",key="update_gfather_mongo").strip()
-                                upd_actual_weight = st.text_input("Nuevo Peso Actual (Int):", key="update_actual_weight_mongo").strip()
-                            with colB:
-                                upd_declared_weight = st.text_input("Nuevo Peso Dec (Int):",key="update_declared_weight_mongo").strip()
-                                upd_draw = st.text_input("Nuevo Sorteo (Int):",key="update_draw_mongo").strip()
-                                upd_finish_pos = st.text_input("Nueva Pos. Final (Int):",key="update_finish_pos_mongo").strip()
-                                upd_run_pos_1 = st.text_input("Nueva Pos. C1 (Int):",key="update_run_pos_1_mongo").strip()
-                                upd_run_pos_2 = st.text_input("Nueva Pos. C2 (Int):",key="update_run_pos_2_mongo").strip()
-                                upd_run_pos_3 = st.text_input("Nueva Pos. C3 (Int):",key="update_run_pos_3_mongo").strip()
-                                upd_time = st.text_input("Nuevo Tiempo (String):", key="update_time_mongo").strip()
-                        
-                        btn_actualizar = st.form_submit_button("Actualizar Documento", type="primary", use_container_width=True)
-                        
-                        if btn_actualizar:
-                            if not horse_id_busqueda or not race_id_busqueda:
-                                st.error("Tanto el ID del caballo como el ID de la carrera son obligatorios.")
+                    st.markdown("**2. Nuevos Datos (dejá en blanco lo que no quieras cambiar):**")
+
+                    upd_name = st.text_input("Nuevo Nombre:",key="update_name_mongo").upper().strip()
+                    upd_jockey = st.text_input("Nuevo Jockey:",key="update_jockey_mongo").strip()
+
+                    with st.expander("Ver campos técnicos a modificar"):
+                        colA, colB = st.columns(2)
+                        with colA:
+                            upd_number = st.text_input("Nuevo N° Caballo (Int):",key="update_number_mongo").strip()
+                            upd_trainer = st.text_input("Nuevo Entrenador:",key="update_trainer_mongo").strip()
+                            upd_father = st.text_input("Nuevo Padre:",key="update_father_mongo").strip()
+                            upd_mother = st.text_input("Nueva Madre:",key="update_mother_mongo").strip()
+                            upd_gfather = st.text_input("Nuevo Abuelo:",key="update_gfather_mongo").strip()
+                            upd_actual_weight = st.text_input("Nuevo Peso Actual (Int):", key="update_actual_weight_mongo").strip()
+                        with colB:
+                            upd_declared_weight = st.text_input("Nuevo Peso Dec (Int):",key="update_declared_weight_mongo").strip()
+                            upd_draw = st.text_input("Nuevo Sorteo (Int):",key="update_draw_mongo").strip()
+                            upd_finish_pos = st.text_input("Nueva Pos. Final (Int):",key="update_finish_pos_mongo").strip()
+                            upd_run_pos_1 = st.text_input("Nueva Pos. C1 (Int):",key="update_run_pos_1_mongo").strip()
+                            upd_run_pos_2 = st.text_input("Nueva Pos. C2 (Int):",key="update_run_pos_2_mongo").strip()
+                            upd_run_pos_3 = st.text_input("Nueva Pos. C3 (Int):",key="update_run_pos_3_mongo").strip()
+                            upd_time = st.text_input("Nuevo Tiempo (String):", key="update_time_mongo").strip()
+
+                    btn_actualizar = st.button("Actualizar Documento", type="primary", use_container_width=True,key="boton_act_mongo")
+
+                    if btn_actualizar:
+                        if not horse_id_busqueda or not race_id_busqueda:
+                            st.error("Tanto el ID del caballo como el ID de la carrera son obligatorios.")
+                        else:
+                            caballo_existe = buscar_caballo_por_id_y_carrera(collection, horse_id_busqueda, race_id_busqueda)
+                            if caballo_existe:
+                                inputs_crudos_upd = {
+                                    "horse_name": upd_name, "horse_number": upd_number,
+                                    "jockey": upd_jockey, "trainer": upd_trainer, "father": upd_father,
+                                    "mother": upd_mother, "gfather": upd_gfather, "actual_weight": upd_actual_weight,
+                                    "declared_horse_weight": upd_declared_weight, "draw": upd_draw,
+                                    "finishing_position": upd_finish_pos, "running_position_1": upd_run_pos_1,
+                                    "running_position_2": upd_run_pos_2, "running_position_3": upd_run_pos_3,
+                                    "finish_time": upd_time
+                                }
+
+                                campos_a_actualizar = validar_y_tipar_datos(inputs_crudos_upd)
+
+                                if campos_a_actualizar: # Se actualiza si hay datos y no devolvió None
+                                    actualizar_caballo(collection, horse_id_busqueda, race_id_busqueda, campos_a_actualizar)
+                                    st.success(f"Se actualizaron {len(campos_a_actualizar)} campos para el caballo {horse_id_busqueda} en la carrera {race_id_busqueda}.")
+
+                                elif campos_a_actualizar is not None:
+                                    st.warning("El registro existe, pero no ingresaste ningún dato nuevo para actualizar.")
+
                             else:
-                                caballo_existe = buscar_caballo_por_id_y_carrera(collection, horse_id_busqueda, race_id_busqueda)
-                                if caballo_existe:
-                                    inputs_crudos_upd = {
-                                        "horse_name": upd_name, "horse_number": upd_number, 
-                                        "jockey": upd_jockey, "trainer": upd_trainer, "father": upd_father,
-                                        "mother": upd_mother, "gfather": upd_gfather, "actual_weight": upd_actual_weight,
-                                        "declared_horse_weight": upd_declared_weight, "draw": upd_draw,
-                                        "finishing_position": upd_finish_pos, "running_position_1": upd_run_pos_1,
-                                        "running_position_2": upd_run_pos_2, "running_position_3": upd_run_pos_3,
-                                        "finish_time": upd_time
-                                    }
-                                    
-                                    campos_a_actualizar = validar_y_tipar_datos(inputs_crudos_upd)
-                                    
-                                    if campos_a_actualizar: # Se actualiza si hay datos y no devolvió None
-                                        actualizar_caballo(collection, horse_id_busqueda, race_id_busqueda, campos_a_actualizar)
-                                        st.success(f"Se actualizaron {len(campos_a_actualizar)} campos para el caballo {horse_id_busqueda} en la carrera {race_id_busqueda}.")
-
-                                    elif campos_a_actualizar is not None:
-                                        st.warning("El registro existe, pero no ingresaste ningún dato nuevo para actualizar.")
-
-                                else:
-                                    st.error(f"No se encontró al caballo {horse_id_busqueda} participando en la carrera {race_id_busqueda}.")
+                                st.error(f"No se encontró al caballo {horse_id_busqueda} participando en la carrera {race_id_busqueda}.")
 
                 # -------------------------------------------------
                 # BORRADO DE DOCUMENTOS
                 # -------------------------------------------------
                 elif categoria1 == "Borrado":
-                    tipo_borrado = st.radio("Opciones de Eliminación:",
-                                            ["Eliminar caballo de una carrera especifica",
-                                             "Eliminar caballo de todas las carreras"]
-                                            )
+                    tipo_borrado = st.radio("Opciones de Eliminación:",["Eliminar caballo de una carrera especifica","Eliminar caballo de todas las carreras"])
                     
-                    with st.form("form_borrado"):
+                    if tipo_borrado == "Eliminar caballo de una carrera especifica":
+                        st.markdown("**Eliminar registro exacto**")
+
+                        colBusqA, colBusqB = st.columns(2)
+                        with colBusqA:
+                            horse_id_borrar = st.text_input("ID Caballo (Obligatorio):",key="delete_horse_id_mongo").upper().strip()
+                        with colBusqB:
+                            race_id_borrar = st.text_input("ID Carrera (Obligatorio):",key="delete_race_id_mongo").upper().strip()
+                    else:
+                        st.markdown("**Eliminar historial completo**")
+                        st.warning("Esto eliminará todas las carreras registradas de este caballo en la base de datos.")
+
+                        horse_id_borrar = st.text_input("ID Caballo (Obligatorio):",key="delete_all_horse_id_mongo").upper().strip()
+                        race_id_borrar = None
+
+                    btn_borrar = st.button("Ejecutar Eliminación", type="primary", use_container_width=True,key="boton_borrar_mongo")
+
+                    if btn_borrar:
                         if tipo_borrado == "Eliminar caballo de una carrera especifica":
-                            st.markdown("**Eliminar registro exacto**")
+                            if horse_id_borrar and race_id_borrar:
+                                resultado = borrar_caballo_carrera_especifica(collection, horse_id_borrar, race_id_borrar)
 
-                            colBusqA, colBusqB = st.columns(2)
-                            with colBusqA:
-                                horse_id_borrar = st.text_input("ID Caballo (Obligatorio):",key="delete_horse_id_mongo").upper().strip()
-                            with colBusqB:
-                                race_id_borrar = st.text_input("ID Carrera (Obligatorio):",key="delete_race_id_mongo").upper().strip()
-                        else:
-                            st.markdown("**Eliminar historial completo**")
-                            st.warning("Esto eliminará todas las carreras registradas de este caballo en la base de datos.")
-
-                            horse_id_borrar = st.text_input("ID Caballo (Obligatorio):",key="delete_all_horse_id_mongo").upper().strip()
-                            race_id_borrar = None
-                            
-                        btn_borrar = st.form_submit_button("Ejecutar Eliminación", type="primary", use_container_width=True)
-                        
-                        if btn_borrar:
-                            if tipo_borrado == "Eliminar caballo de una carrera especifica":
-                                if horse_id_borrar and race_id_borrar:
-                                    resultado = borrar_caballo_carrera_especifica(collection, horse_id_borrar, race_id_borrar)
-
-                                    if resultado.deleted_count > 0:
-                                        st.success(f"Se eliminó correctamente el registro del caballo {horse_id_borrar} en la carrera {race_id_borrar}.")
-                                    else:
-                                        st.error(f"No se encontró al caballo {horse_id_borrar} participando en la carrera {race_id_borrar}.")
+                                if resultado.deleted_count > 0:
+                                    st.success(f"Se eliminó correctamente el registro del caballo {horse_id_borrar} en la carrera {race_id_borrar}.")
                                 else:
-                                    st.warning("Ambos IDs (Caballo y Carrera) son obligatorios.")
-
+                                    st.error(f"No se encontró al caballo {horse_id_borrar} participando en la carrera {race_id_borrar}.")
                             else:
-                                if horse_id_borrar:
-                                    resultado = borrar_caballo_todas_carreras(collection, horse_id_borrar)
-                                    if resultado.deleted_count > 0:
-                                        st.success(f"Se eliminaron {resultado.deleted_count} registros totales del caballo {horse_id_borrar}.")
-                                    else:
-                                        st.error(f"No se encontró ningún registro del caballo con ID {horse_id_borrar}.")
+                                st.warning("Ambos IDs (Caballo y Carrera) son obligatorios.")
+
+                        else:
+                            if horse_id_borrar:
+                                resultado = borrar_caballo_todas_carreras(collection, horse_id_borrar)
+                                if resultado.deleted_count > 0:
+                                    st.success(f"Se eliminaron {resultado.deleted_count} registros totales del caballo {horse_id_borrar}.")
                                 else:
-                                    st.warning("El ID del Caballo es obligatorio.")
+                                    st.error(f"No se encontró ningún registro del caballo con ID {horse_id_borrar}.")
+                            else:
+                                st.warning("El ID del Caballo es obligatorio.")
 
             # =====================================================
             # CONSULTAS Y SIMULACIÓN

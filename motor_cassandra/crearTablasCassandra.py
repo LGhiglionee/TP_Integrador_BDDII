@@ -8,7 +8,6 @@ def crearTablas(cassandra_db):
 
     print("Tablas creadas correctamente en Cassandra.")
 
-
 def crearTablaResultadosPorCarrera(cassandra_db):
     cassandra_db.execute("""
         CREATE TABLE IF NOT EXISTS resultados_por_carrera (
