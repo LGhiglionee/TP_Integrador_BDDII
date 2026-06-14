@@ -1,17 +1,44 @@
 import time
 import random
 
+# =========================
+# AUXILIARES
+# =========================
+def _normalizar_valor(valor):
+    if isinstance(valor, bytes):
+        return valor.decode("utf-8")
+    return str(valor)
+
+def _normalizar_hash(hash_redis):
+    return {
+        _normalizar_valor(k): _normalizar_valor(v)
+        for k, v in hash_redis.items()
+    }
+
+def _normalizar_lista(valores):
+    return [_normalizar_valor(v) for v in valores]
+
+# =========================
+# SIMULAR CARRERA
+# =========================
 def simularCarrera(redis_db, idCarrera):
     idCarrera = str(idCarrera).strip()
 
+    carrera_key = f"carrera:{idCarrera}:info"
     participantes_key = f"carrera:{idCarrera}:participantes"
     ranking_key = f"carrera:{idCarrera}:ranking"
 
-    participantes = redis_db.smembers(participantes_key)
+    if not redis_db.exists(carrera_key):
+        print(f"La carrera {idCarrera} no existe.")
+        return
+
+    participantes = _normalizar_lista(redis_db.smembers(participantes_key))
 
     if not participantes:
         print("No hay participantes para simular la carrera.")
         return
+
+    redis_db.hset(carrera_key, "estado", "en curso")
 
     for vuelta in range(5):
         print(f"\nVuelta {vuelta + 1}")
@@ -21,14 +48,19 @@ def simularCarrera(redis_db, idCarrera):
             redis_db.zincrby(ranking_key, avance, horse_id)
 
             caballo_key = f"carrera:{idCarrera}:caballo:{horse_id}"
-            caballo = redis_db.hgetall(caballo_key)
+            caballo = _normalizar_hash(redis_db.hgetall(caballo_key))
 
-            print(f"{caballo['horse_name']} avanzo {avance} puntos")
+            nombre = caballo.get("horse_name", horse_id)
+
+            print(f"{nombre} avanzó {avance} puntos")
 
         time.sleep(1)
 
-    print("\nSimulacion finalizada.")
+    print("\nSimulación finalizada.")
 
+# =========================
+# VER RANKING
+# =========================
 def verRanking(redis_db, idCarrera):
     idCarrera = str(idCarrera).strip()
 
@@ -44,8 +76,10 @@ def verRanking(redis_db, idCarrera):
     posicion = 1
 
     for horse_id, puntaje in ranking:
+        horse_id = _normalizar_valor(horse_id)
+
         caballo_key = f"carrera:{idCarrera}:caballo:{horse_id}"
-        caballo = redis_db.hgetall(caballo_key)
+        caballo = _normalizar_hash(redis_db.hgetall(caballo_key))
 
         nombre = caballo.get("horse_name", horse_id)
 
@@ -53,9 +87,12 @@ def verRanking(redis_db, idCarrera):
 
         posicion += 1
 
+# =========================
+# OBTENER GANADOR
+# =========================
 def obtenerGanador(redis_db, idCarrera):
     idCarrera = str(idCarrera).strip()
-    
+
     ranking_key = f"carrera:{idCarrera}:ranking"
     ganador = redis_db.zrevrange(ranking_key, 0, 0, withscores=True)
 
@@ -63,20 +100,20 @@ def obtenerGanador(redis_db, idCarrera):
         print("No hay ganador para esta carrera.")
         return
 
-    horse_id = ganador[0][0]
+    horse_id = _normalizar_valor(ganador[0][0])
     puntaje = ganador[0][1]
 
     caballo_key = f"carrera:{idCarrera}:caballo:{horse_id}"
-    caballo = redis_db.hgetall(caballo_key)
+    caballo = _normalizar_hash(redis_db.hgetall(caballo_key))
 
     nombre = caballo.get("horse_name", horse_id)
 
     print(f"Ganador: {nombre} con {int(puntaje)} puntos")
 
-
-#Finalizar carrera
+# =========================
+# FINALIZAR CARRERA
+# =========================
 def finalizarCarrera(redis_db, idCarrera):
-
     idCarrera = str(idCarrera).strip()
 
     carrera_key = f"carrera:{idCarrera}:info"
@@ -92,14 +129,14 @@ def finalizarCarrera(redis_db, idCarrera):
         print(f"No hay ranking cargado para la carrera {idCarrera}.")
         return
 
-    horse_id_ganador = ganador[0][0]
+    horse_id_ganador = _normalizar_valor(ganador[0][0])
     puntaje = ganador[0][1]
 
     caballo_key = f"carrera:{idCarrera}:caballo:{horse_id_ganador}"
-    caballo = redis_db.hgetall(caballo_key)
+    caballo = _normalizar_hash(redis_db.hgetall(caballo_key))
 
     nombre_ganador = caballo.get("horse_name", horse_id_ganador)
-    
+
     redis_db.hset(carrera_key, "estado", "finalizada")
     redis_db.hset(carrera_key, "ganador", horse_id_ganador)
     redis_db.hset(carrera_key, "nombre_ganador", nombre_ganador)
@@ -107,10 +144,12 @@ def finalizarCarrera(redis_db, idCarrera):
 
     print(f"\nCarrera {idCarrera} finalizada.")
     print(f"Ganador: {nombre_ganador} con {int(puntaje)} puntos.")
-    
-#Actualizar apuestas ganadas/perdidas
-def actualizarApuestas(redis_db, idCarrera):
 
+
+# =========================
+# ACTUALIZAR APUESTAS GANADAS / PERDIDAS
+# =========================
+def actualizarApuestas(redis_db, idCarrera):
     idCarrera = str(idCarrera).strip()
 
     carrera_key = f"carrera:{idCarrera}:info"
@@ -120,14 +159,21 @@ def actualizarApuestas(redis_db, idCarrera):
         print(f"La carrera {idCarrera} no existe.")
         return
 
-    carrera = redis_db.hgetall(carrera_key)
+    carrera = _normalizar_hash(redis_db.hgetall(carrera_key))
     horse_id_ganador = carrera.get("ganador")
+
+    estado = carrera.get("estado", "").lower()
+
+    if estado != "finalizada":
+        print(f"No se pueden actualizar las apuestas porque la carrera {idCarrera} no está finalizada.")
+        print(f"Estado actual: {estado}")
+        return
 
     if not horse_id_ganador:
         print("La carrera todavía no tiene ganador. Primero debe finalizarse.")
         return
 
-    apuestas = redis_db.smembers(apuestas_key)
+    apuestas = _normalizar_lista(redis_db.smembers(apuestas_key))
 
     if not apuestas:
         print(f"No hay apuestas para actualizar en la carrera {idCarrera}.")
@@ -137,10 +183,8 @@ def actualizarApuestas(redis_db, idCarrera):
     perdidas = 0
 
     for apuesta_id in apuestas:
-
         apuesta_key = f"carrera:{idCarrera}:apuesta:{apuesta_id}"
-
-        apuesta = redis_db.hgetall(apuesta_key)
+        apuesta = _normalizar_hash(redis_db.hgetall(apuesta_key))
 
         horse_id_apostado = apuesta.get("horse_id")
 
@@ -154,11 +198,11 @@ def actualizarApuestas(redis_db, idCarrera):
     print(f"\nApuestas actualizadas para la carrera {idCarrera}.")
     print(f"Apuestas ganadas: {ganadas}")
     print(f"Apuestas perdidas: {perdidas}")
-    
-    
-#Expirar datos temporales de una carrera
-def expirarDatosCarrera(redis_db, idCarrera):
 
+# =========================
+# EXPIRAR DATOS TEMPORALES
+# =========================
+def expirarDatosCarrera(redis_db, idCarrera):
     idCarrera = str(idCarrera).strip()
 
     segundos_expiracion = 20
@@ -167,31 +211,28 @@ def expirarDatosCarrera(redis_db, idCarrera):
     ranking_key = f"carrera:{idCarrera}:ranking"
     carrera_key = f"carrera:{idCarrera}:info"
     apuestas_key = f"carrera:{idCarrera}:apuestas"
+    contador_apuestas_key = f"carrera:{idCarrera}:contador_apuestas"
 
-    if redis_db.exists(carrera_key):
-
-        redis_db.expire(carrera_key, segundos_expiracion)
-        redis_db.expire(participantes_key, segundos_expiracion)
-        redis_db.expire(ranking_key, segundos_expiracion)
-        redis_db.expire(apuestas_key, segundos_expiracion)
-
-        participantes = redis_db.smembers(participantes_key)
-
-        for horse_id in participantes:
-
-            caballo_key = f"carrera:{idCarrera}:caballo:{horse_id}"
-
-            redis_db.expire(caballo_key, segundos_expiracion)
-
-        apuestas = redis_db.smembers(apuestas_key)
-
-        for apuesta_id in apuestas:
-
-            apuesta_key = f"carrera:{idCarrera}:apuesta:{apuesta_id}"
-
-            redis_db.expire(apuesta_key, segundos_expiracion)
-
-        print(f"Los datos de la carrera {idCarrera} expirarán en {segundos_expiracion} segundos.")
-
-    else:
+    if not redis_db.exists(carrera_key):
         print(f"La carrera {idCarrera} no existe.")
+        return
+
+    redis_db.expire(carrera_key, segundos_expiracion)
+    redis_db.expire(participantes_key, segundos_expiracion)
+    redis_db.expire(ranking_key, segundos_expiracion)
+    redis_db.expire(apuestas_key, segundos_expiracion)
+    redis_db.expire(contador_apuestas_key, segundos_expiracion)
+
+    participantes = _normalizar_lista(redis_db.smembers(participantes_key))
+
+    for horse_id in participantes:
+        caballo_key = f"carrera:{idCarrera}:caballo:{horse_id}"
+        redis_db.expire(caballo_key, segundos_expiracion)
+
+    apuestas = _normalizar_lista(redis_db.smembers(apuestas_key))
+
+    for apuesta_id in apuestas:
+        apuesta_key = f"carrera:{idCarrera}:apuesta:{apuesta_id}"
+        redis_db.expire(apuesta_key, segundos_expiracion)
+
+    print(f"Los datos de la carrera {idCarrera} expirarán en {segundos_expiracion} segundos.")
