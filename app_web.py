@@ -115,7 +115,7 @@ with tab_mongo:
     mostrar_mongo (obtener_coleccion_mongo())
     
 with tab_redis:
-    mostrar_redis(obtener_conexion_redis())
+    mostrar_redis(obtener_conexion_redis(),obtener_conexion_cassandra())
 
 with tab_cassandra:
     mostrar_cassandra(obtener_conexion_cassandra())

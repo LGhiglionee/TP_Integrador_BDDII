@@ -16,6 +16,8 @@ from contextlib import redirect_stdout
 from motor_redis.consultas.consultasBasicas_redis import *
 from motor_redis.consultas.consultasAvanzadas_redis import *
 from motor_redis.crud.crud_redis import *
+from sincronizacion_simultanea.sinc_simu_redis_cassandra import finalizarCarreraSimultanea
+
 
 # =========================================================
 # FUNCIÓN AUXILIAR PARA CAPTURAR SALIDA DE CONSOLA
@@ -44,7 +46,7 @@ def ejecutar_consulta_y_capturar_output(func, *args, **kwargs):
 # =========================================================
 # VISTA PRINCIPAL DE REDIS
 # =========================================================
-def mostrar_redis(redis_db):
+def mostrar_redis(redis_db,cassandra_session=None):
     """
     Renderiza la pestaña de Redis dentro del dashboard.
 
@@ -174,14 +176,14 @@ def mostrar_redis(redis_db):
 
                     id_carrera = st.text_input("Ingrese ID de la Carrera:",value="",placeholder="Ej: 2016-567",key="id_update_redis").strip()
                     if opcion_crud and opcion_crud.startswith("1."):
-                        nuevo_estado_carrera = st.selectbox("Seleccione nuevo estado de la carrera:",["Creada", "En curso", "Finalizada", "Cancelada"],key="estado_carrera_update_redis")
+                        nuevo_estado_carrera = st.selectbox("Seleccione nuevo estado de la carrera:",["Creada", "En curso", "Finalizada"],key="estado_carrera_update_redis")
 
                     elif opcion_crud and opcion_crud.startswith("2."):
                         apuesta_id = st.text_input("Ingrese ID de la apuesta:",value="",placeholder="Ej: 1",key="apuesta_update_redis").strip()
 
                         nuevo_monto_apuesta = st.number_input("Nuevo monto de la apuesta:",min_value=0.0,value=0.0,step=50.0,key="monto_update_redis")
 
-                        nuevo_estado_apuesta = st.selectbox("Nuevo estado de la apuesta:",["Activa", "Ganada", "Perdida", "Cancelada"],key="estado_apuesta_update_redis")
+                        nuevo_estado_apuesta = st.selectbox("Nuevo estado de la apuesta:",["Activa", "Ganada", "Perdida"],key="estado_apuesta_update_redis")
 
                     ejecutar = st.button("Ejecutar Actualización",use_container_width=True,type="primary",key="btn_update_redis")
 
@@ -231,7 +233,10 @@ def mostrar_redis(redis_db):
                         if opcion.startswith("1."):output_resultado = ejecutar_consulta_y_capturar_output(simularCarrera, redis_db, id_carrera)
                         elif opcion.startswith("2."):output_resultado = ejecutar_consulta_y_capturar_output(verRanking, redis_db, id_carrera)
                         elif opcion.startswith("3."):output_resultado = ejecutar_consulta_y_capturar_output(obtenerGanador, redis_db, id_carrera)
-                        elif opcion.startswith("4."):output_resultado = ejecutar_consulta_y_capturar_output(finalizarCarrera, redis_db, id_carrera)
+                        elif opcion.startswith("4."):
+                            output_resultado = ejecutar_consulta_y_capturar_output(
+                                finalizarCarreraSimultanea, redis_db, cassandra_session, id_carrera
+                            )
                         elif opcion.startswith("5."):output_resultado = ejecutar_consulta_y_capturar_output(actualizarApuestas, redis_db, id_carrera)
                         elif opcion.startswith("6."):output_resultado = ejecutar_consulta_y_capturar_output(expirarDatosCarrera, redis_db, id_carrera)
 
@@ -261,7 +266,12 @@ def mostrar_redis(redis_db):
                         nombre_operacion = opcion_crud
 
                         if opcion_crud.startswith("1."):
-                            output_resultado = ejecutar_consulta_y_capturar_output(actualizarEstadoCarrera,redis_db,id_carrera,nuevo_estado_carrera)
+                            if nuevo_estado_carrera.strip().lower() == "finalizada":
+                                output_resultado = ejecutar_consulta_y_capturar_output(
+                                    finalizarCarreraSimultanea, redis_db, cassandra_session, id_carrera)
+                            else:
+                                output_resultado = ejecutar_consulta_y_capturar_output(
+                                    actualizarEstadoCarrera, redis_db, id_carrera, nuevo_estado_carrera)
 
                         elif opcion_crud.startswith("2."):
                             if not apuesta_id:
