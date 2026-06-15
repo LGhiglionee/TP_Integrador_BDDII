@@ -147,6 +147,7 @@ def mostrar_redis(redis_db,cassandra_session=None):
                 # CRUD - INSERCIÓN
                 # -------------------------------------------------
                 if categoria_crud == "Inserción":
+                    st.markdown("**Inserción de registro en Redis**")
                     opcion_crud = st.selectbox("Seleccione la operación de inserción:",["1. Crear apuesta manual"],key="select_insert_redis")
 
                     id_carrera = st.text_input("Ingrese ID de la Carrera:",value="",placeholder="Ej: 2016-567",key="id_insert_redis").strip()
@@ -159,6 +160,7 @@ def mostrar_redis(redis_db,cassandra_session=None):
                 # CRUD - LECTURA
                 # -------------------------------------------------
                 elif categoria_crud == "Lectura":
+                    st.markdown("**Lectura de registro en Redis**")
                     opcion_crud = st.selectbox("Seleccione la operación de lectura:",["1. Buscar carrera","2. Buscar apuesta"],key="select_read_redis")
 
                     id_carrera = st.text_input("Ingrese ID de la Carrera:",value="",placeholder="Ej: 2016-567",key="id_read_redis").strip()
@@ -171,6 +173,7 @@ def mostrar_redis(redis_db,cassandra_session=None):
                 # CRUD - ACTUALIZACIÓN
                 # -------------------------------------------------
                 elif categoria_crud == "Actualización":
+                    st.markdown("**Actualización de registro en Cassandra**")
                     opcion_crud = st.selectbox(
                         "Seleccione la operación de actualización:",["1. Actualizar estado de carrera","2. Actualizar apuesta"],key="select_update_redis")
 
@@ -191,6 +194,7 @@ def mostrar_redis(redis_db,cassandra_session=None):
                 # CRUD - BORRADO
                 # -------------------------------------------------
                 elif categoria_crud == "Borrado":
+                    st.markdown("**Borrado de registro en Cassandra**")
                     opcion_crud = st.selectbox("Seleccione la operación de borrado:",["1. Borrar apuesta","2. Borrar carrera completa"],key="select_delete_redis")
 
                     id_carrera = st.text_input("Ingrese ID de la Carrera:",value="",placeholder="Ej: 2016-567",key="id_delete_redis").strip()

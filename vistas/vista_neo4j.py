@@ -188,119 +188,118 @@ def mostrar_neo4j(driver):
                 # INSERCIÓN DE REGISTRO
                 # -------------------------------------------------
                 if categoria_crud == "Inserción":
-                    with st.form("form_insercion_neo4j", clear_on_submit=True):
-                        st.markdown("**Inserción de registro en Neo4j**")
+                    st.markdown("**Inserción de registro en Neo4j**")
 
-                        # Datos obligatorios para identificar caballo y carrera.
-                        horse_id = st.text_input("ID Caballo (Obligatorio):",value="",placeholder="Ej: A177",key="neo4j_insert_horse_id").upper().strip()
-                        horse_name = st.text_input("Nombre del Caballo (Obligatorio):",value="",placeholder="Ej: ENCORE BOY",key="neo4j_insert_horse_name").upper().strip()
-                        race_id = st.text_input("ID Carrera (Obligatorio):",value="",placeholder="Ej: 2016-783",key="neo4j_insert_race_id").upper().strip()
-                        jockey = st.text_input("Jockey:",value="",placeholder="Ej: Z Purton",key="neo4j_insert_jockey").strip()
-                        trainer = st.text_input("Entrenador:",value="",placeholder="Ej: P F Yiu",key="neo4j_insert_trainer").strip()
+                    # Datos obligatorios para identificar caballo y carrera.
+                    horse_id = st.text_input("ID Caballo (Obligatorio):",value="",placeholder="Ej: A177",key="neo4j_insert_horse_id").upper().strip()
+                    horse_name = st.text_input("Nombre del Caballo (Obligatorio):",value="",placeholder="Ej: ENCORE BOY",key="neo4j_insert_horse_name").upper().strip()
+                    race_id = st.text_input("ID Carrera (Obligatorio):",value="",placeholder="Ej: 2016-783",key="neo4j_insert_race_id").upper().strip()
+                    jockey = st.text_input("Jockey:",value="",placeholder="Ej: Z Purton",key="neo4j_insert_jockey").strip()
+                    trainer = st.text_input("Entrenador:",value="",placeholder="Ej: P F Yiu",key="neo4j_insert_trainer").strip()
 
-                        # Campos opcionales cargados como propiedades y relaciones.
-                        with st.expander("Ver campos opcionales"):
-                            colA, colB = st.columns(2)
-                            with colA:
-                                horse_number = st.text_input("N° Caballo:",value="",key="neo4j_insert_horse_number").strip()
-                                father = st.text_input("Padre:",value="",key="neo4j_insert_father").upper().strip()
-                                mother = st.text_input("Madre:",value="",key="neo4j_insert_mother").upper().strip()
-                                gfather = st.text_input("Abuelo:",value="",key="neo4j_insert_gfather").upper().strip()
-                                actual_weight = st.text_input("Peso actual:",value="",key="neo4j_insert_actual_weight").strip()
-                                declared_horse_weight = st.text_input("Peso declarado:",value="",key="neo4j_insert_declared_weight").strip()
-                            with colB:
-                                draw = st.text_input("Posición salida:",value="",key="neo4j_insert_draw").strip()
-                                finishing_position = st.text_input("Posición final:",value="",key="neo4j_insert_finishing_position").strip()
-                                running_position_1 = st.text_input("Posición parcial 1:",value="",key="neo4j_insert_running_1").strip()
-                                running_position_2 = st.text_input("Posición parcial 2:",value="",key="neo4j_insert_running_2").strip()
-                                running_position_3 = st.text_input("Posición parcial 3:",value="",key="neo4j_insert_running_3").strip()
-                                finish_time = st.text_input("Tiempo:",value="",placeholder="Ej: 1.09.98",key="neo4j_insert_finish_time").strip()
-                                finish_time_seconds = st.text_input("Tiempo en segundos:",value="",placeholder="Ej: 69,098",key="neo4j_insert_finish_time_seconds").strip()
+                    # Campos opcionales cargados como propiedades y relaciones.
+                    with st.expander("Ver campos opcionales"):
+                        colA, colB = st.columns(2)
+                        with colA:
+                            horse_number = st.text_input("N° Caballo:",value="",key="neo4j_insert_horse_number").strip()
+                            father = st.text_input("Padre:",value="",key="neo4j_insert_father").upper().strip()
+                            mother = st.text_input("Madre:",value="",key="neo4j_insert_mother").upper().strip()
+                            gfather = st.text_input("Abuelo:",value="",key="neo4j_insert_gfather").upper().strip()
+                            actual_weight = st.text_input("Peso actual:",value="",key="neo4j_insert_actual_weight").strip()
+                            declared_horse_weight = st.text_input("Peso declarado:",value="",key="neo4j_insert_declared_weight").strip()
+                        with colB:
+                            draw = st.text_input("Posición salida:",value="",key="neo4j_insert_draw").strip()
+                            finishing_position = st.text_input("Posición final:",value="",key="neo4j_insert_finishing_position").strip()
+                            running_position_1 = st.text_input("Posición parcial 1:",value="",key="neo4j_insert_running_1").strip()
+                            running_position_2 = st.text_input("Posición parcial 2:",value="",key="neo4j_insert_running_2").strip()
+                            running_position_3 = st.text_input("Posición parcial 3:",value="",key="neo4j_insert_running_3").strip()
+                            finish_time = st.text_input("Tiempo:",value="",placeholder="Ej: 1.09.98",key="neo4j_insert_finish_time").strip()
+                            finish_time_seconds = st.text_input("Tiempo en segundos:",value="",placeholder="Ej: 69,098",key="neo4j_insert_finish_time_seconds").strip()
 
-                        btn_insertar = st.form_submit_button("Insertar Registro",type="primary",use_container_width=True)
+                    btn_insertar = st.button("Insertar Registro",type="primary",use_container_width=True, key="btn_insertar_neo4j")
 
-                        if btn_insertar:
-                            # Validación de campos obligatorios.
-                            if not horse_id or not horse_name or not race_id:
-                                mensaje_crud = "El ID del caballo, el nombre del caballo y el ID de carrera son obligatorios."
-                                tipo_mensaje = "error"
-                            else:
-                                datos = {
-                                    "horse_id": horse_id,"horse_name": horse_name,"race_id": race_id,"jockey": jockey,
-                                    "trainer": trainer,"horse_number": horse_number,"father": father,"mother": mother,"gfather": gfather,
-                                    "actual_weight": actual_weight,"declared_horse_weight": declared_horse_weight,"draw": draw,
-                                    "finishing_position": finishing_position,"running_position_1": running_position_1,"running_position_2": running_position_2,
-                                    "running_position_3": running_position_3,"finish_time": finish_time,"finish_time_seconds": finish_time_seconds
-                                }
+                    if btn_insertar:
+                        # Validación de campos obligatorios.
+                        if not horse_id or not horse_name or not race_id:
+                            mensaje_crud = "El ID del caballo, el nombre del caballo y el ID de carrera son obligatorios."
+                            tipo_mensaje = "error"
+                        else:
+                            datos = {
+                                "horse_id": horse_id,"horse_name": horse_name,"race_id": race_id,"jockey": jockey,
+                                "trainer": trainer,"horse_number": horse_number,"father": father,"mother": mother,"gfather": gfather,
+                                "actual_weight": actual_weight,"declared_horse_weight": declared_horse_weight,"draw": draw,
+                                "finishing_position": finishing_position,"running_position_1": running_position_1,"running_position_2": running_position_2,
+                                "running_position_3": running_position_3,"finish_time": finish_time,"finish_time_seconds": finish_time_seconds
+                            }
 
-                                with driver.session(database="neo4j") as session:
-                                    # Evita duplicar el mismo caballo en la misma carrera.
-                                    existe = buscar_participacion_caballo(session,horse_id,race_id)
+                            with driver.session(database="neo4j") as session:
+                                # Evita duplicar el mismo caballo en la misma carrera.
+                                existe = buscar_participacion_caballo(session,horse_id,race_id)
 
-                                    if existe:
-                                        mensaje_crud = f"El caballo {horse_id} ya está registrado en la carrera {race_id}."
-                                        tipo_mensaje = "error"
-                                    else:
-                                        insertar_registro_carrera(session, datos)
-                                        mensaje_crud = f"Se insertó correctamente el caballo {horse_name} en la carrera {race_id}."
-                                        tipo_mensaje = "success"
+                                if existe:
+                                    mensaje_crud = f"El caballo {horse_id} ya está registrado en la carrera {race_id}."
+                                    tipo_mensaje = "error"
+                                else:
+                                    insertar_registro_carrera(session, datos)
+                                    mensaje_crud = f"Se insertó correctamente el caballo {horse_name} en la carrera {race_id}."
+                                    tipo_mensaje = "success"
 
-                                        st.session_state["neo4j_ultimo_resultado_crud"] = armar_salida_insercion_neo4j(datos)
-                                        st.session_state["neo4j_ultimo_archivo_crud"] = f"resultado_insercion_{horse_id}_{race_id}_neo4j.txt"
+                                    st.session_state["neo4j_ultimo_resultado_crud"] = armar_salida_insercion_neo4j(datos)
+                                    st.session_state["neo4j_ultimo_archivo_crud"] = f"resultado_insercion_{horse_id}_{race_id}_neo4j.txt"
 
                 # -------------------------------------------------
                 # BORRADO DE REGISTROS
                 # -------------------------------------------------
                 elif categoria_crud == "Borrado":
+                    st.markdown("**Borrado en Neo4j**")
                     tipo_borrado = st.radio("Opciones de Eliminación:",["Eliminar caballo de una carrera específica","Eliminar caballo completo del grafo"],key="tipo_borrado_neo4j")
 
-                    with st.form("form_borrado_neo4j", clear_on_submit=True):
-                        if tipo_borrado == "Eliminar caballo de una carrera específica":
-                            st.markdown("**Eliminar participación en una carrera específica**")
+                    if tipo_borrado == "Eliminar caballo de una carrera específica":
+                        st.markdown("**Eliminar participación en una carrera específica**")
 
-                            colBusqA, colBusqB = st.columns(2)
-                            with colBusqA:horse_id_borrar = st.text_input("ID Caballo (Obligatorio):",value="",placeholder="Ej: A177",key="neo4j_delete_horse_id").upper().strip()
+                        colBusqA, colBusqB = st.columns(2)
+                        with colBusqA:horse_id_borrar = st.text_input("ID Caballo (Obligatorio):",value="",placeholder="Ej: A177",key="neo4j_delete_horse_id").upper().strip()
 
-                            with colBusqB:race_id_borrar = st.text_input("ID Carrera (Obligatorio):",value="",placeholder="Ej: 2016-783",key="neo4j_delete_race_id").upper().strip()
+                        with colBusqB:race_id_borrar = st.text_input("ID Carrera (Obligatorio):",value="",placeholder="Ej: 2016-783",key="neo4j_delete_race_id").upper().strip()
 
-                        else:
-                            st.markdown("**Eliminar caballo completo del grafo**")
-                            st.warning("Esto eliminará el nodo del caballo y todas sus relaciones.")
+                    else:
+                        st.markdown("**Eliminar caballo completo del grafo**")
+                        st.warning("Esto eliminará el nodo del caballo y todas sus relaciones.")
 
-                            horse_id_borrar = st.text_input("ID Caballo (Obligatorio):",value="",placeholder="Ej: A177",key="neo4j_delete_all_horse_id").upper().strip()
-                            race_id_borrar = None
+                        horse_id_borrar = st.text_input("ID Caballo (Obligatorio):",value="",placeholder="Ej: A177",key="neo4j_delete_all_horse_id").upper().strip()
+                        race_id_borrar = None
 
-                        btn_borrar = st.form_submit_button("Ejecutar Eliminación",type="primary",use_container_width=True)
-                        if btn_borrar:
-                            with driver.session(database="neo4j") as session:
-                                if tipo_borrado == "Eliminar caballo de una carrera específica":
-                                    if not horse_id_borrar or not race_id_borrar:
-                                        mensaje_crud = "El ID del caballo y el ID de carrera son obligatorios."
-                                        tipo_mensaje = "error"
-                                    else:
-                                        resultado = borrar_caballo_carrera_especifica(session,horse_id_borrar,race_id_borrar)
-                                        if resultado["deleted_count"] > 0:
-                                            mensaje_crud = f"Se eliminó la participación del caballo {horse_id_borrar} en la carrera {race_id_borrar}."
-                                            tipo_mensaje = "success"
-
-                                            st.session_state["neo4j_ultimo_resultado_crud"] = armar_salida_borrado_neo4j("Eliminar caballo de una carrera específica",horse_id_borrar,race_id_borrar,resultado)
-                                            st.session_state["neo4j_ultimo_archivo_crud"] = f"resultado_borrado_{horse_id_borrar}_{race_id_borrar}_neo4j.txt"
-                                        else:
-                                            mensaje_crud = f"No se encontró al caballo {horse_id_borrar} participando en la carrera {race_id_borrar}."
-                                            tipo_mensaje = "error"
-
+                    btn_borrar = st.button("Ejecutar Eliminación",type="primary",use_container_width=True, key="btn_borrar_neo4j")
+                    if btn_borrar:
+                        with driver.session(database="neo4j") as session:
+                            if tipo_borrado == "Eliminar caballo de una carrera específica":
+                                if not horse_id_borrar or not race_id_borrar:
+                                    mensaje_crud = "El ID del caballo y el ID de carrera son obligatorios."
+                                    tipo_mensaje = "error"
                                 else:
-                                    if not horse_id_borrar:
-                                        mensaje_crud = "El ID del caballo es obligatorio."
-                                        tipo_mensaje = "error"
-                                    else:
-                                        resultado = borrar_caballo_completo(session,horse_id_borrar)
-                                        if resultado["deleted_count"] > 0:
-                                            mensaje_crud = f"Se eliminó completamente el caballo {horse_id_borrar} del grafo."
-                                            tipo_mensaje = "success"
+                                    resultado = borrar_caballo_carrera_especifica(session,horse_id_borrar,race_id_borrar)
+                                    if resultado["deleted_count"] > 0:
+                                        mensaje_crud = f"Se eliminó la participación del caballo {horse_id_borrar} en la carrera {race_id_borrar}."
+                                        tipo_mensaje = "success"
 
-                                            st.session_state["neo4j_ultimo_resultado_crud"] = armar_salida_borrado_neo4j("Eliminar caballo completo del grafo",horse_id_borrar,None,resultado)
-                                            st.session_state["neo4j_ultimo_archivo_crud"] = f"resultado_borrado_completo_{horse_id_borrar}_neo4j.txt"
+                                        st.session_state["neo4j_ultimo_resultado_crud"] = armar_salida_borrado_neo4j("Eliminar caballo de una carrera específica",horse_id_borrar,race_id_borrar,resultado)
+                                        st.session_state["neo4j_ultimo_archivo_crud"] = f"resultado_borrado_{horse_id_borrar}_{race_id_borrar}_neo4j.txt"
+                                    else:
+                                        mensaje_crud = f"No se encontró al caballo {horse_id_borrar} participando en la carrera {race_id_borrar}."
+                                        tipo_mensaje = "error"
+
+                            else:
+                                if not horse_id_borrar:
+                                    mensaje_crud = "El ID del caballo es obligatorio."
+                                    tipo_mensaje = "error"
+                                else:
+                                    resultado = borrar_caballo_completo(session,horse_id_borrar)
+                                    if resultado["deleted_count"] > 0:
+                                        mensaje_crud = f"Se eliminó completamente el caballo {horse_id_borrar} del grafo."
+                                        tipo_mensaje = "success"
+
+                                        st.session_state["neo4j_ultimo_resultado_crud"] = armar_salida_borrado_neo4j("Eliminar caballo completo del grafo",horse_id_borrar,None,resultado)
+                                        st.session_state["neo4j_ultimo_archivo_crud"] = f"resultado_borrado_completo_{horse_id_borrar}_neo4j.txt"
 
             # =====================================================
             # CONSULTAS Y SIMULACIÓN

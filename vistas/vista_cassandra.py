@@ -94,6 +94,7 @@ def mostrar_cassandra(session):
                 # CRUD - INSERCIÓN
                 # -------------------------------------------------
                 if categoria_crud == "Inserción":
+                    st.markdown("**Inserción de registro en Cassandra**")
                     opcion_crud = st.selectbox("Seleccione la operación de inserción:",["1. Crear resultado manual"],key="select_insert_cassandra")
 
                     id_carrera = st.text_input("Ingrese ID de la Carrera:",value="",placeholder="Ej: 2016-567",key="id_insert_cassandra").strip()
@@ -112,6 +113,7 @@ def mostrar_cassandra(session):
                 # CRUD - LECTURA
                 # -------------------------------------------------
                 elif categoria_crud == "Lectura":
+                    st.markdown("**Lectura de registro en Cassandra**")
                     opcion_crud = st.selectbox("Seleccione la operación de lectura:",["1. Buscar resultado específico"],key="select_read_cassandra")
 
                     id_carrera = st.text_input("Ingrese ID de la Carrera:",value="",placeholder="Ej: 2016-567",key="id_read_cassandra").strip()
@@ -124,6 +126,7 @@ def mostrar_cassandra(session):
                 # CRUD - ACTUALIZACIÓN
                 # -------------------------------------------------
                 elif categoria_crud == "Actualización":
+                    st.markdown("**Actualización de registro en Cassandra**")
                     opcion_crud = st.selectbox("Seleccione la operación de actualización:",["1. Actualizar tiempo de resultado"],key="select_update_cassandra")
 
                     id_carrera = st.text_input("Ingrese ID de la Carrera:",value="",placeholder="Ej: 2016-567",key="id_update_cassandra").strip()
@@ -138,6 +141,7 @@ def mostrar_cassandra(session):
                 # CRUD - BORRADO
                 # -------------------------------------------------
                 elif categoria_crud == "Borrado":
+                    st.markdown("**Borrado de registro en Cassandra**")
                     opcion_crud = st.selectbox("Seleccione la operación de borrado:",["1. Borrar resultado específico"],key="select_delete_cassandra")
 
                     id_carrera = st.text_input("Ingrese ID de la Carrera:",value="",placeholder="Ej: 2016-567",key="id_delete_cassandra").strip()
