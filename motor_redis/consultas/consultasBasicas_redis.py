@@ -1,3 +1,9 @@
+"""
+Módulo de gestión de datos y estado de carreras en Redis.
+Este script orquesta la creación de entidades temporales, el mapeo de relaciones
+caballo-carrera y la persistencia efímera de apuestas, utilizando Redis como motor
+de alta velocidad para operaciones de escritura concurrente.
+"""
 import random
 from motor_redis.conectarRedis import leerDataset
 
@@ -26,9 +32,15 @@ def _preparar_mapping(diccionario):
     }
 
 # =========================
-# CREAR CARRERA + CARGAR CABALLOS
+# CREACIÓN DE CARRERA (INGESTA TEMPORAL)
 # =========================
 def crearCarrera(redis_db, idCarrera):
+    """
+    Deserializa datos desde la fuente principal (MongoDB) y los vuelca en estructuras
+    específicas de Redis (Hash, Set, Sorted Set) para optimizar el acceso durante la carrera.
+    """
+    # El uso de HASH para info de carrera y SET para participantes permite
+    # consultas de tiempo constante O(1) para verificar existencia y miembros.
     idCarrera = str(idCarrera).strip()
 
     carrera_key = f"carrera:{idCarrera}:info"
@@ -57,19 +69,21 @@ def crearCarrera(redis_db, idCarrera):
 
         redis_db.hset(caballo_key, mapping=_preparar_mapping(caballo))
         redis_db.sadd(participantes_key, horse_id)
+        # ZADD: Inicializa el ranking en 0. Permite el manejo de un marcador en tiempo real.
         redis_db.zadd(ranking_key, {horse_id: 0})
 
     print(f"Carrera {idCarrera} creada con {len(caballos)} caballos.")
 
 
 # =========================
-# CREAR APUESTAS FICTICIAS
+# GESTIÓN DE APUESTAS (TRANSACCIONAL)
 # =========================
-# =========================
-# CREAR APUESTAS FICTICIAS
-# =========================
-
 def generarApuestasFicticias(redis_db, idCarrera, cantidadApuestas):
+    """
+    Simulación de carga transaccional: Genera apuestas aleatorias.
+    Utiliza un contador atómico (INCR) para asegurar IDs únicos de apuesta
+    incluso en entornos de alta concurrencia.
+    """
     idCarrera = str(idCarrera).strip()
 
     try:
@@ -103,6 +117,7 @@ def generarApuestasFicticias(redis_db, idCarrera, cantidadApuestas):
         return
 
     for i in range(cantidadApuestas):
+        # INCR: Operación atómica de Redis para evitar condiciones de carrera (Race Conditions)
         apuesta_id = redis_db.incr(f"carrera:{idCarrera}:contador_apuestas")
         horse_id = random.choice(participantes)
         monto = random.randint(100, 5000)
@@ -116,6 +131,7 @@ def generarApuestasFicticias(redis_db, idCarrera, cantidadApuestas):
             "estado": "activa"
         })
 
+        # SADD: Añade la apuesta al conjunto (Set) de apuestas de la carrera de forma O(1).
         redis_db.sadd(apuestas_key, apuesta_id)
 
     print(f"Se generaron {cantidadApuestas} apuestas.")
@@ -125,6 +141,11 @@ def generarApuestasFicticias(redis_db, idCarrera, cantidadApuestas):
 # VER ESTADO DE CARRERA
 # =========================
 def verEstadoCarrera(redis_db, idCarrera):
+    """
+    Recupera el estado global de una carrera mediante un Hash.
+    Esta es una operación O(1), extremadamente eficiente al traer todos los campos
+    del estado de la carrera en un solo viaje de red.
+    """
     idCarrera = str(idCarrera).strip()
 
     carrera_key = f"carrera:{idCarrera}:info"
@@ -133,6 +154,7 @@ def verEstadoCarrera(redis_db, idCarrera):
         print(f"La carrera {idCarrera} no existe.")
         return
 
+    # HGETALL trae todo el objeto de estado de la carrera de una vez
     carrera = _normalizar_hash(redis_db.hgetall(carrera_key))
 
     print(f"\n--- Estado de la Carrera {idCarrera} ---")
@@ -148,10 +170,16 @@ def verEstadoCarrera(redis_db, idCarrera):
 # VER PARTICIPANTES
 # =========================
 def verParticipantes(redis_db, idCarrera):
+    """
+    Consulta de miembros de un conjunto (Set).
+    Recupera todos los IDs de los caballos participantes (SMEMBERS)
+    y luego realiza una búsqueda indexada por cada ID (HGETALL).
+    """
     idCarrera = str(idCarrera).strip()
 
     participantes_key = f"carrera:{idCarrera}:participantes"
 
+    # SMEMBERS obtiene el set completo de participantes sin duplicados
     participantes = _normalizar_lista(redis_db.smembers(participantes_key))
 
     if not participantes:
@@ -161,6 +189,7 @@ def verParticipantes(redis_db, idCarrera):
     print(f"\n--- Participantes de la carrera {idCarrera} ---")
 
     for horse_id in participantes:
+        # Acceso directo al hash del caballo por su ID único en esa carrera
         caballo_key = f"carrera:{idCarrera}:caballo:{horse_id}"
         caballo = _normalizar_hash(redis_db.hgetall(caballo_key))
 
@@ -175,10 +204,17 @@ def verParticipantes(redis_db, idCarrera):
 # VER APUESTAS
 # =========================
 def verApuestasActivas(redis_db, idCarrera):
+    """
+    Visualización de datos: Itera sobre los miembros del SET de apuestas.
+    Para cada una, realiza un HGETALL que recupera toda la estructura del objeto
+    en una sola operación de red.
+    """
     idCarrera = str(idCarrera).strip()
 
     apuestas_key = f"carrera:{idCarrera}:apuestas"
 
+    # SMEMBERS devuelve todos los identificadores de apuestas en una única llamada,
+    # minimizando el tráfico de red entre el cliente y el servidor Redis.
     apuestas = _normalizar_lista(redis_db.smembers(apuestas_key))
 
     if not apuestas:

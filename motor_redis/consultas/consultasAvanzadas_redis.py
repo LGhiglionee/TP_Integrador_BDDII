@@ -1,9 +1,15 @@
+"""
+Módulo de lógica de simulación y gestión de estado en tiempo real para Redis.
+Utiliza estructuras de datos avanzadas como Sorted Sets (para rankings) y Hashes
+(para estados de carrera), permitiendo una latencia mínima en la simulación.
+"""
 import time
 import random
 
 # =========================
-# AUXILIARES
+# AUXILIARES DE NORMALIZACIÓN
 # =========================
+# Redis devuelve bytes; estas funciones aseguran que los datos sean legibles como strings
 def _normalizar_valor(valor):
     if isinstance(valor, bytes):
         return valor.decode("utf-8")
@@ -19,9 +25,13 @@ def _normalizar_lista(valores):
     return [_normalizar_valor(v) for v in valores]
 
 # =========================
-# SIMULAR CARRERA
+# LÓGICA DE SIMULACIÓN
 # =========================
 def simularCarrera(redis_db, idCarrera):
+    """
+    Simulación de alta concurrencia: utiliza ZINCRBY sobre un Sorted Set (ranking)
+    para actualizar puntajes atómicamente en memoria conforme los caballos avanzan.
+    """
     idCarrera = str(idCarrera).strip()
 
     carrera_key = f"carrera:{idCarrera}:info"
@@ -45,6 +55,7 @@ def simularCarrera(redis_db, idCarrera):
 
         for horse_id in participantes:
             avance = random.randint(1, 10)
+            # ZINCRBY: Incrementa el puntaje del caballo en el ranking de forma atómica y ultra rápida
             redis_db.zincrby(ranking_key, avance, horse_id)
 
             caballo_key = f"carrera:{idCarrera}:caballo:{horse_id}"
@@ -58,13 +69,16 @@ def simularCarrera(redis_db, idCarrera):
 
     print("\nSimulación finalizada.")
 
-# =========================
-# VER RANKING
-# =========================
+
 def verRanking(redis_db, idCarrera):
+    """
+    Consulta de ranking en tiempo real: usa ZREVRANGE para obtener a los caballos
+    ordenados por puntaje (descendente) de manera inmediata.
+    """
     idCarrera = str(idCarrera).strip()
 
     ranking_key = f"carrera:{idCarrera}:ranking"
+    # ZREVRANGE: Permite obtener el top N de la tabla de posiciones con complejidad O(log(N))
     ranking = redis_db.zrevrange(ranking_key, 0, -1, withscores=True)
 
     if not ranking:
@@ -87,22 +101,29 @@ def verRanking(redis_db, idCarrera):
 
         posicion += 1
 
-# =========================
-# OBTENER GANADOR
-# =========================
+
 def obtenerGanador(redis_db, idCarrera):
+    """
+    Identifica al ganador de la carrera mediante un acceso directo al índice superior
+    del Sorted Set. Es una operación de tiempo constante para la recuperación del
+    líder (el elemento con mayor puntaje).
+    """
     idCarrera = str(idCarrera).strip()
 
     ranking_key = f"carrera:{idCarrera}:ranking"
+
+    # ZREVRANGE permite obtener el elemento con el puntaje más alto (índice 0) sin tener que ordenar todo el conjunto manualmente.
     ganador = redis_db.zrevrange(ranking_key, 0, 0, withscores=True)
 
     if not ganador:
         print("No hay ganador para esta carrera.")
         return
 
+    # Extracción del ID y puntaje desde la estructura de datos
     horse_id = _normalizar_valor(ganador[0][0])
     puntaje = ganador[0][1]
 
+    # HGETALL recupera todos los campos del caballo ganador como un hash/diccionario
     caballo_key = f"carrera:{idCarrera}:caballo:{horse_id}"
     caballo = _normalizar_hash(redis_db.hgetall(caballo_key))
 
@@ -110,10 +131,12 @@ def obtenerGanador(redis_db, idCarrera):
 
     print(f"Ganador: {nombre} con {int(puntaje)} puntos")
 
-# =========================
-# FINALIZAR CARRERA
-# =========================
+
 def finalizarCarrera(redis_db, idCarrera):
+    """
+    Persistencia de estado: Cambia el hash de info de la carrera a 'finalizada'
+    y guarda los datos del ganador permanentemente en la estructura HASH.
+    """
     idCarrera = str(idCarrera).strip()
 
     carrera_key = f"carrera:{idCarrera}:info"
@@ -146,10 +169,11 @@ def finalizarCarrera(redis_db, idCarrera):
     print(f"Ganador: {nombre_ganador} con {int(puntaje)} puntos.")
 
 
-# =========================
-# ACTUALIZAR APUESTAS GANADAS / PERDIDAS
-# =========================
 def actualizarApuestas(redis_db, idCarrera):
+    """
+    Gestión de estado de apuestas: Itera sobre los miembros de un SET (apuestas),
+    compara el caballo apostado contra el ganador, y actualiza el estado de cada apuesta.
+    """
     idCarrera = str(idCarrera).strip()
 
     carrera_key = f"carrera:{idCarrera}:info"
@@ -173,6 +197,7 @@ def actualizarApuestas(redis_db, idCarrera):
         print("La carrera todavía no tiene ganador. Primero debe finalizarse.")
         return
 
+    # SMEMBERS: Extrae todos los IDs de apuestas rápidamente para procesamiento posterior
     apuestas = _normalizar_lista(redis_db.smembers(apuestas_key))
 
     if not apuestas:
@@ -199,10 +224,12 @@ def actualizarApuestas(redis_db, idCarrera):
     print(f"Apuestas ganadas: {ganadas}")
     print(f"Apuestas perdidas: {perdidas}")
 
-# =========================
-# EXPIRAR DATOS TEMPORALES
-# =========================
 def expirarDatosCarrera(redis_db, idCarrera):
+    """
+    Gestión de memoria eficiente: Implementa el ciclo de vida de los datos (TTL).
+    Marca todas las claves relacionadas para su eliminación automática tras 20s,
+    evitando que la memoria RAM de Redis se sature con datos de carreras pasadas.
+    """
     idCarrera = str(idCarrera).strip()
 
     segundos_expiracion = 20
@@ -217,6 +244,7 @@ def expirarDatosCarrera(redis_db, idCarrera):
         print(f"La carrera {idCarrera} no existe.")
         return
 
+    # EXPIRE: Comando fundamental de Redis para delegar la limpieza de basura al motor
     redis_db.expire(carrera_key, segundos_expiracion)
     redis_db.expire(participantes_key, segundos_expiracion)
     redis_db.expire(ranking_key, segundos_expiracion)
