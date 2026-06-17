@@ -1,6 +1,5 @@
 from neo4j import GraphDatabase
 
-from motor_neo4j.crearRestriccionesNeo4j import crearRestricciones
 from motor_neo4j.importarDatasetNeo4j import ImportarDataset
 
 
@@ -14,8 +13,6 @@ def ConectarNeo4j(uri, user, password, base_datos="neo4j"):
         driver = GraphDatabase.driver(uri, auth=(user, password))
 
         driver.verify_connectivity()
-
-        crearRestricciones(driver, base_datos)
 
         with driver.session(database=base_datos) as session:
             resultado = session.run("MATCH (n) RETURN count(n) AS total")
