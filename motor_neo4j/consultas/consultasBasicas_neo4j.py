@@ -1,4 +1,13 @@
+"""
+Módulo de consultas básicas para Neo4j (Cypher).
+Ejecuta operaciones de recuperación de nodos y filtrado por patrones de texto,
+demostrando la eficiencia de las búsquedas en estructuras de grafos.
+"""
 def listar_todos_entrenadores(session):
+    """
+    Recupera el listado único de nodos :Entrenador, excluyendo registros
+    con etiquetas de datos incompletos ('Desconocido').
+    """
     try:
         query = """
         MATCH (e:Entrenador)
@@ -20,6 +29,10 @@ def listar_todos_entrenadores(session):
 
 
 def caballos_ganadores(session):
+    """
+    Filtra caballos mediante un patrón de relación (c:Caballo)-[:CORRIO]->(:Carrera)
+    y una condición sobre la propiedad 'posicion' de la arista.
+    """
     try:
         query = """
         MATCH (c:Caballo)-[r:CORRIO]->(:Carrera)
@@ -41,6 +54,10 @@ def caballos_ganadores(session):
         print(f"Error en la consulta: {e}")
 
 def cantidad_total_caballos(session):
+    """
+    Utiliza la función de agregación 'count' para obtener la cardinalidad
+    de caballos participantes, asegurando unicidad con DISTINCT.
+    """
     try:
         query = """
         MATCH (c:Caballo)-[:CORRIO]->(:Carrera)
@@ -60,6 +77,10 @@ def cantidad_total_caballos(session):
 
 
 def entrenadores_letra_p(session):
+    """
+    Demuestra el uso de operadores de cadena 'STARTS WITH' en Cypher
+    para búsquedas por prefijos de manera nativa y rápida.
+    """
     try:
         query = """
         MATCH (e:Entrenador)
@@ -82,6 +103,10 @@ def entrenadores_letra_p(session):
 
 
 def caballos_con_dragon(session):
+    """
+    Uso del operador 'CONTAINS' para búsqueda de sub-cadenas (patrones de texto)
+    dentro de las propiedades de los nodos Caballo.
+    """
     try:
         query = """
         MATCH (c:Caballo)-[:CORRIO]->(:Carrera)
