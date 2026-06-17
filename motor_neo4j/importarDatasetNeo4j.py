@@ -63,6 +63,15 @@ def ImportarDataset(driver, base_datos):
         with driver.session(database=base_datos) as session:
             insertar_nodos_principales(session, documentos, tamaño_lote)
             insertar_relaciones(session, documentos, tamaño_lote)
+            
+            print("Calculando el total de entidades y relaciones importadas...")
+            resultado_entidades = session.run("MATCH (n) RETURN count(n) AS TotalEntidades").single()
+            resultado_relaciones = session.run("MATCH ()-[r]->() RETURN count(r) AS TotalRelaciones").single()
+            
+            if resultado_entidades:
+                print(f"Total de Entidades: {resultado_entidades['TotalEntidades']}")
+            if resultado_relaciones:
+                print(f"Total de Relaciones: {resultado_relaciones['TotalRelaciones']}")
 
         print("Importación completa en Neo4j.")
 
@@ -88,15 +97,11 @@ def insertar_nodos_principales(session, documentos, tamaño_lote):
         MERGE (j:Jockey {nombre: fila.jockey})
     """
 
-    total_procesados = 0
     total_documentos = len(documentos)
 
     for i in range(0, total_documentos, tamaño_lote):
         lote_actual = documentos[i:i + tamaño_lote]
         session.run(query, batch=lote_actual)
-
-        total_procesados += len(lote_actual)
-        print(f"Nodos principales: {total_procesados} / {total_documentos} procesados...")
 
 
 def insertar_relaciones(session, documentos, tamaño_lote):
@@ -138,15 +143,11 @@ def insertar_relaciones(session, documentos, tamaño_lote):
         MERGE (c)-[:MONTADO_POR]->(j)
     """
 
-    total_procesados = 0
     total_documentos = len(documentos)
 
     for i in range(0, total_documentos, tamaño_lote):
         lote_actual = documentos[i:i + tamaño_lote]
         session.run(query, batch=lote_actual)
-
-        total_procesados += len(lote_actual)
-        print(f"Relaciones: {total_procesados} / {total_documentos} procesadas...")
 
 
 def limpiar_texto(valor):
