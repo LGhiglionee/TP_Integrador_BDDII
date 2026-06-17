@@ -4,14 +4,8 @@ import os
 import redis
 
 def conectarRedis():
-
     try:
-
-        redis_db = redis.Redis(
-            host='localhost',
-            port=6379,
-            decode_responses=True
-        )
+        redis_db = redis.Redis(host='localhost',port=6379,decode_responses=True)
 
         redis_db.ping()
 

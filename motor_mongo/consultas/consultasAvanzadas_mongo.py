@@ -1,15 +1,24 @@
-#Tiempo promedio de carrera de todos los caballos
+"""
+Módulo de consultas avanzadas para MongoDB.
+Este archivo contiene la lógica de negocio aplicada sobre los datos de carreras.
+Utiliza operadores de MongoDB como $regex, $lt y métodos de agregación (sort, limit, distinct).
+"""
 
 def promedio_tiempo_todos(collection):
+    """
+    Calcula el promedio aritmético de tiempos.
+    Primero proyecta solo el campo necesario para reducir el uso de memoria (I/O).
+    """
     try:
         query = {}
-        proyeccion = {"finish_time_seconds": 1, "_id": 0}
+        proyeccion = {"finish_time_seconds": 1, "_id": 0} # Solo traer el campo de tiempo
         
         resultados = list(collection.find(query, proyeccion))
         
         if not resultados:
             print("No se encontraron resultados para poder calcular el promedio.")
         else:
+            # Lógica de cálculo en Python tras filtrar los nulos
             suma_tiempos = 0
             cantidad_caballos = 0
             for caballo in resultados:
@@ -26,8 +35,11 @@ def promedio_tiempo_todos(collection):
     except Exception as e:
         print(f"Error en la consulta: {e}")
 
-#Tiempo promedio de carrera de los caballos entrenados por P F YIU
 def promedio_tiempo_entrenador(collection):
+    """
+    Usa el operador $regex con opciones 'i' (case-insensitive) para buscar
+    patrones flexibles en el nombre del entrenador.
+    """
     try:
         query = {"trainer": {"$regex": "P.*F.*YIU", "$options": "i"}}
         proyeccion = {"finish_time_seconds": 1, "_id": 0}
@@ -37,6 +49,7 @@ def promedio_tiempo_entrenador(collection):
         if not resultados:
             print("No se encontraron resultados de caballos entrenados por P F YIU.")
         else:
+            # Similar lógica de promedio que la función anterior
             suma_tiempos = 0
             cantidad_caballos = 0
         
@@ -54,12 +67,15 @@ def promedio_tiempo_entrenador(collection):
     except Exception as e:
         print(f"Error en la consulta: {e}")
 
-#Todos los caballos con numero 10 y que el tiempo de carrera es menor a 1.22.70
 def caballos_diez_tiempo(collection):
+    """
+    Utiliza el operador $lt (less than) para filtrado numérico avanzado
+    y distinct para evitar nombres duplicados en la lista.
+    """
     try:
         query = {
             "horse_number": 10,
-            "finish_time_seconds": { "$lt": 82.70 }
+            "finish_time_seconds": { "$lt": 82.70 } # 1.22.70 convertido a segundos
         }
         nombres_no_repetidos = collection.distinct ("horse_name", query)
         
@@ -73,9 +89,10 @@ def caballos_diez_tiempo(collection):
     except Exception as e:
         print(f"Error en la consulta: {e}")
 
-#Listar todos los caballos que su nombre comience con la letra A
-
 def caballosConA (collection):
+    """
+    Filtra documentos mediante una expresión regular anclada al inicio (^).
+    """
     try:
         query = {
             "horse_name": { "$regex": "^A"}
@@ -92,9 +109,11 @@ def caballosConA (collection):
     except Exception as e:
         print(f"Error en la consulta: {e}")
 
-#TOP 10 de tiempos
-
 def top_10_tiempos(collection):
+    """
+    Combina .sort() (ordenamiento nativo del motor) con .limit() para
+    recuperar eficientemente solo los registros de mayor relevancia (más rápidos).
+    """
     try:
         query = {}
         proyeccion = {
