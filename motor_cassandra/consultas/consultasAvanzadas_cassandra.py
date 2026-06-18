@@ -1,73 +1,61 @@
 def verRendimientoCaballo(cassandra_db, idCaballo):
     filas = cassandra_db.execute("""
-        SELECT * FROM historial_por_caballo WHERE horse_id = %s
+        SELECT * FROM rendimiento_caballo WHERE horse_id = %s
     """, (str(idCaballo),))
     resultados = list(filas)
+    
     if not resultados:
-        print("No se encontró historial para ese caballo.")
+        print(f"No se encontraron registros en 'rendimiento_caballo' para el ID: {idCaballo}")
         return
 
-    total = len(resultados)
-    victorias = sum(1 for fila in resultados if fila.finishing_position == 1)
-    promedio_posicion = sum(fila.finishing_position for fila in resultados) / total
+    print(f"\n--- Datos de la tabla rendimiento_caballo (ID: {idCaballo}) ---")
+    for fila in resultados:
+        print(f"Horse ID: {fila.horse_id} | Carreras Corridas: {fila.carreras_corridas} | Victorias: {fila.victorias} | Promedio Posición: {fila.promedio_posicion}")
 
-    print(f"\n--- Rendimiento del caballo {idCaballo} ---")
-    print(f"Carreras corridas: {total}")
-    print(f"Victorias: {victorias}")
-    print(f"Promedio de posición final: {promedio_posicion:.2f}")
 
-def verRendimientoJockey(cassandra_db, nombreJockey):
+def verJockeyPorPosicionFinalDelCaballo(cassandra_db, idCaballo):
+    # Hace SELECT a la tabla jockey_por_posicion_final_del_caballo
     filas = cassandra_db.execute("""
-        SELECT * FROM historial_por_jockey WHERE jockey = %s
+        SELECT * FROM jockey_por_posicion_final_del_caballo WHERE horse_id = %s
+    """, (str(idCaballo),))
+    resultados = list(filas)
+    
+    if not resultados:
+        print(f"No se encontraron registros en 'jockey_por_posicion_final_del_caballo' para el ID de caballo: {idCaballo}")
+        return
+
+    print(f"\n--- Datos de la tabla jockey_por_posicion_final_del_caballo (Caballo: {idCaballo}) ---")
+    for fila in resultados:
+        print(f"Horse ID: {fila.horse_id} | Position: {fila.finishing_position} | Time Seconds: {fila.finish_time_seconds}s | Jockey: {fila.jockey} | Diferencia: {fila.diferencia} | Draw: {fila.draw}")
+
+
+def verEntrenadorPorJockey(cassandra_db, nombreJockey):
+    # Hace SELECT a la tabla entrenador_por_jockey
+    filas = cassandra_db.execute("""
+        SELECT * FROM entrenador_por_jockey WHERE jockey = %s
     """, (str(nombreJockey),))
     resultados = list(filas)
+    
     if not resultados:
-        print("No se encontró historial para ese jockey.")
+        print(f"No se encontraron registros en 'entrenador_por_jockey' para el jockey: {nombreJockey}")
         return
 
-    total = len(resultados)
-    victorias = sum(1 for fila in resultados if fila.finishing_position == 1)
-    promedio_posicion = sum(fila.finishing_position for fila in resultados) / total
-
-    print(f"\n--- Rendimiento del jockey {nombreJockey} ---")
-    print(f"Carreras corridas: {total}")
-    print(f"Victorias: {victorias}")
-    print(f"Promedio de posición final: {promedio_posicion:.2f}")
-
-def verUltimasCarrerasCaballo(cassandra_db, idCaballo, limite):
-    consulta = "SELECT * FROM historial_por_caballo WHERE horse_id = %s LIMIT %s"
-    filas = cassandra_db.execute(consulta, (str(idCaballo), int(limite)))
-    resultados = list(filas)
-    if not resultados:
-        print("No se encontraron carreras para ese caballo.")
-        return
-
-    print(f"\n--- Últimas {limite} carreras del caballo {idCaballo} ---")
+    print(f"\n--- Datos de la tabla entrenador_por_jockey (Jockey: {nombreJockey}) ---")
     for fila in resultados:
-        print(f"Carrera: {fila.race_id} | Posición: {fila.finishing_position} | Tiempo: {fila.finish_time}")
+        print(f"Jockey: {fila.jockey} | Time Seconds: {fila.finish_time_seconds}s | Trainer: {fila.trainer}")
 
-def verUltimasCarrerasJockey(cassandra_db, nombreJockey, limite):
-    consulta = "SELECT * FROM historial_por_jockey WHERE jockey = %s LIMIT %s"
-    filas = cassandra_db.execute(consulta, (str(nombreJockey), int(limite)))
-    resultados = list(filas)
-    if not resultados:
-        print("No se encontraron carreras para ese jockey.")
-        return
 
-    print(f"\n--- Últimas {limite} carreras del jockey {nombreJockey} ---")
-    for fila in resultados:
-        print(f"Carrera: {fila.race_id} | Caballo: {fila.horse_name} | Posición: {fila.finishing_position}")
-
-def verMejoresTiemposPorCarrera(cassandra_db, idCarrera):
-    """Reemplaza la consulta rota original mapeando a la tabla real de mejores tiempos."""
+def verTiempoPromedioPorDupla(cassandra_db, nombreJockey, nombreTrainer):
+    # Hace SELECT a la tabla tiempo_promedio_por_dupla usando la llave primaria compuesta (jockey, trainer)
     filas = cassandra_db.execute("""
-        SELECT * FROM mejores_tiempos_por_carrera WHERE race_id = %s LIMIT 10
-    """, (str(idCarrera),))
+        SELECT * FROM tiempo_promedio_por_dupla WHERE jockey = %s AND trainer = %s
+    """, (str(nombreJockey), str(nombreTrainer)))
     resultados = list(filas)
+    
     if not resultados:
-        print("No se encontraron tiempos para esa carrera.")
+        print(f"No se encontraron registros en 'tiempo_promedio_por_dupla' para la dupla: {nombreJockey} - {nombreTrainer}")
         return
 
-    print(f"\n--- Mejores tiempos en la carrera {idCarrera} ---")
+    print(f"\n--- Datos de la tabla tiempo_promedio_por_dupla (Dupla: {nombreJockey} / {nombreTrainer}) ---")
     for fila in resultados:
-        print(f"Segundos: {fila.finish_time_seconds}s | Tiempo: {fila.finish_time} | Caballo: {fila.horse_name} | Puesto: {fila.finishing_position}")
+        print(f"Jockey: {fila.jockey} | Trainer: {fila.trainer} | Promedio Tiempo: {fila.promedio_tiempo_final} | Time Seconds: {fila.finish_time_seconds}s")

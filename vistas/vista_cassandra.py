@@ -237,9 +237,9 @@ def mostrar_cassandra(session):
                 # ---------------------------------------------
                 elif categoria == "Complejas" and opcion:
                     if opcion.startswith("1."):output_resultado = ejecutar_consulta_y_capturar_output(verRendimientoCaballo, session, id_carrera)
-                    elif opcion.startswith("2."):output_resultado = ejecutar_consulta_y_capturar_output(verRendimientoJockey, session, id_carrera)
-                    elif opcion.startswith("3."):output_resultado = ejecutar_consulta_y_capturar_output(verUltimasCarrerasCaballo, session, id_carrera, limite_filas)
-                    elif opcion.startswith("4."):output_resultado = ejecutar_consulta_y_capturar_output(verUltimasCarrerasJockey, session, id_carrera, limite_filas)
+                    elif opcion.startswith("2."):output_resultado = ejecutar_consulta_y_capturar_output(verJockeyPorPosicionFinalDelCaballo, session, id_carrera)
+                    elif opcion.startswith("3."):output_resultado = ejecutar_consulta_y_capturar_output(verEntrenadorPorJockey, session, id_carrera, limite_filas)
+                    elif opcion.startswith("4."):output_resultado = ejecutar_consulta_y_capturar_output(verTiempoPromedioPorDupla, session, id_carrera, limite_filas)
                     elif opcion.startswith("5."):output_resultado = ejecutar_consulta_y_capturar_output(verMejoresTiemposPorCarrera, session, id_carrera)
 
                 # ---------------------------------------------
