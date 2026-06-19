@@ -149,7 +149,7 @@ def recomendacion_apuestas_linaje(session, nombre):
             print(f"Analizando la sangre de '{nombre}'")
 
             padre = resultados[0]["padre"]
-            victorias = resultados[0]["victorias"]
+            victorias = resultados[0]["victorias_familiares"]
 
             print("")
             print(f"Linaje exitoso detectado: {padre}")
@@ -250,7 +250,7 @@ def ranking_entrenadores_por_linaje(session, nombre_padre):
             for r in resultados:
                 print(
                     f"Entrenador: {r['entrenador']} | "
-                    f"Promedio de llegada: {r['promedio_posicion']:.2f} | "
+                    f"Promedio de llegada (Posicion): {r['promedio_posicion']:.2f} | "
                     f"Caballos analizados: {r['cantidad_caballos']}"
                 )
 

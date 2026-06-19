@@ -21,7 +21,7 @@ def verResultadoCarrera(cassandra_db, idCarrera):
 
     print(f"\n--- Resultado de la carrera {idCarrera} ---")
     for fila in resultados:
-        print(f"Posición (Draw): {fila.draw} | Caballo: {fila.horse_name} | Tiempo: {fila.finish_time} | Posición final: {fila.finishing_position}")
+        print(f"Posición (Sorteo): {fila.draw} | Caballo: {fila.horse_name} | Tiempo: {fila.finish_time} | Posición final: {fila.finishing_position}")
 
 def verGanadorCarrera(cassandra_db, idCarrera):
     """

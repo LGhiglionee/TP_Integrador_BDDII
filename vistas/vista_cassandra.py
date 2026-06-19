@@ -62,10 +62,7 @@ def mostrar_cassandra(session):
     horse_id = ""
     horse_number = None
     horse_name = ""
-    jockey = ""
-    trainer = ""
     finish_time = ""
-    finish_time_seconds = None
     confirmar_borrado = False
 
     # Distribución principal:columna izquierda para controles, columna derecha para resultados.
@@ -97,10 +94,7 @@ def mostrar_cassandra(session):
                     horse_id = st.text_input("Ingrese ID del caballo:",value="",placeholder="Ej: 12345",key="horse_insert_cassandra").strip()
                     horse_number = st.number_input("Ingrese Número de Mantilla (#):",min_value=1,max_value=100,value=1,key="num_insert_cassandra")
                     horse_name = st.text_input("Ingrese Nombre del Caballo:",value="",key="name_insert_cassandra").strip()
-                    jockey = st.text_input("Ingrese Nombre del Jockey:",value="",key="jockey_insert_cassandra").strip()
-                    trainer = st.text_input("Ingrese Nombre del Entrenador:",value="",key="trainer_insert_cassandra").strip()
                     finish_time = st.text_input("Ingrese Tiempo (Texto):",value="",placeholder="Ej: 1.22.45",key="time_insert_cassandra").strip()
-                    finish_time_seconds = st.number_input("Ingrese Tiempo (Segundos):",min_value=0.0,value=0.0,step=0.1,key="seconds_insert_cassandra")
 
                     ejecutar = st.button("Ejecutar Inserción",use_container_width=True,type="primary",key="btn_insert_cassandra")
 
@@ -128,7 +122,6 @@ def mostrar_cassandra(session):
                     finishing_position = st.number_input("Ingrese Posición de Llegada:",min_value=1,max_value=100,value=1,key="pos_update_cassandra")
                     horse_id = st.text_input("Ingrese ID del caballo:",value="",placeholder="Ej: 12345",key="horse_update_cassandra").strip()
                     finish_time = st.text_input("Nuevo Tiempo (Texto):",value="",placeholder="Ej: 1.20.15",key="time_update_cassandra").strip()
-                    finish_time_seconds = st.number_input("Nuevo Tiempo (Segundos):",min_value=0.0,value=0.0,step=0.1,key="seconds_update_cassandra")
 
                     ejecutar = st.button("Ejecutar Actualización",use_container_width=True,type="primary",key="btn_update_cassandra")
 
@@ -185,7 +178,7 @@ def mostrar_cassandra(session):
                         "Seleccione la consulta compleja:",
                         [
                             "1. Ver rendimiento analítico de un caballo",
-                            "2. Ver la posicion en la termino un caballo con un jockey",
+                            "2. Ver la posicion en la que termino un caballo con un jockey",
                             "3. Ver entrenadores que trabajaron junto a un jockey",
                             "4. Ver actuaciones promedio de duplas jockey/entrenador",
                             "5. Ver todos los caballos"
@@ -193,17 +186,14 @@ def mostrar_cassandra(session):
                         key="select_compleja_cassandra"
                     )
 
-                    if opcion and (opcion.startswith("3.") or opcion.startswith("4.") or opcion.startswith("5.")):
-                        limite_filas = st.number_input("Cantidad de registros (Límite):",min_value=1,max_value=100,value=5,key="limite_compleja_cassandra")
-
                     if opcion.startswith("1."):
                         id_carrera = st.text_input("Ingrese ID del Caballo:", value="", placeholder="Ej: T369",key="id_compleja_1").strip()
-                    elif opcion.startswith("2.") or opcion.startswith("3."):
+                    elif opcion.startswith("3."):
                         id_carrera = st.text_input("Ingrese Nombre del Jockey:", value="", placeholder="Ej: K C Leung",key="id_compleja_2_3").strip()
                     elif opcion.startswith("4."):
                         id_carrera = st.text_input("Ingrese Nombre del jockey:", value="", placeholder="Ej: K C Leung",key="id_compleja_4_j").strip()
                         id_trainer = st.text_input("Ingrese Nombre del entrenador:", value="", placeholder="Ej: P O'Sullivan",key="id_compleja_4_t").strip()
-                    elif opcion.startswith("5."):
+                    elif opcion.startswith("2.") :
                         id_carrera = st.text_input("Ingrese ID del Caballo:", value="", placeholder="Ej: T369",key="id_compleja_5").strip()
 
                     ejecutar = st.button("Ejecutar Consulta Compleja",use_container_width=True,type="primary",key="btn_ejecutar_c_cassandra")
@@ -241,7 +231,7 @@ def mostrar_cassandra(session):
                     elif opcion.startswith("2."): output_resultado = ejecutar_consulta_y_capturar_output(verJockeyPorPosicionFinalDelCaballo, session, id_carrera)
                     elif opcion.startswith("3."): output_resultado = ejecutar_consulta_y_capturar_output(verEntrenadorPorJockey, session, id_carrera)
                     elif opcion.startswith("4."): output_resultado = ejecutar_consulta_y_capturar_output(verTiempoPromedioPorDupla, session, id_carrera, id_trainer)
-                    elif opcion.startswith("5."): output_resultado = ejecutar_consulta_y_capturar_output(verCaballos, session, id_carrera)
+                    elif opcion.startswith("5."): output_resultado = ejecutar_consulta_y_capturar_output(verCaballos, session)
 
                 # ---------------------------------------------
                 # EJECUCIÓN DE OPERACIONES CRUD
@@ -251,7 +241,7 @@ def mostrar_cassandra(session):
                     if opcion_crud.startswith("1."):
                         if not horse_id or not horse_name: st.warning("El ID y Nombre del caballo son obligatorios para crear el registro.")
                         else:
-                            output_resultado = ejecutar_consulta_y_capturar_output(crear_resultado_manual,session,id_carrera,finishing_position,horse_id,horse_number,horse_name,jockey,trainer,finish_time,finish_time_seconds)
+                            output_resultado = ejecutar_consulta_y_capturar_output(crear_resultado_manual,session,id_carrera,finishing_position,horse_id,horse_number,horse_name,finish_time)
 
                 elif categoria_crud == "Lectura" and opcion_crud:
                     nombre_operacion = opcion_crud
@@ -265,7 +255,7 @@ def mostrar_cassandra(session):
                     if opcion_crud.startswith("1."):
                         if not horse_id: st.warning("El ID del caballo es obligatorio para actualizar el registro.")
                         else:
-                            output_resultado = ejecutar_consulta_y_capturar_output(actualizar_tiempo_resultado,session,id_carrera,finishing_position,horse_id,finish_time,finish_time_seconds)
+                            output_resultado = ejecutar_consulta_y_capturar_output(actualizar_tiempo_resultado,session,id_carrera,finishing_position,horse_id,finish_time)
 
                 elif categoria_crud == "Borrado" and opcion_crud:
                     nombre_operacion = opcion_crud

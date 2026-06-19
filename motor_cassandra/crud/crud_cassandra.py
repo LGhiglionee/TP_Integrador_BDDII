@@ -4,24 +4,24 @@ Implementa mutaciones atómicas y lecturas directas por clave primaria completa,
 optimizando el rendimiento a través de sentencias precompiladas
 y minimizando la latencia de coordinación en el anillo distribuido.
 """
-def crear_resultado_manual(session, race_id, finishing_position, horse_id, horse_number, horse_name, jockey, trainer, finish_time, finish_time_seconds):
+def crear_resultado_manual(session, race_id, finishing_position, horse_id, horse_number, horse_name, finish_time):
     """
     Operación CREATE: Inserción directa en una fila ancha (Wide Row).
     Esto permite validar los tipos de datos en el cliente y serializar los parámetros de forma eficiente,
     evitando inyecciones y reduciendo el procesamiento sintáctico en escrituras consecutivas.
     """
     query = """
-        INSERT INTO resultados_por_carrera (
+        INSERT INTO caballos_por_carrera (
             race_id, finishing_position, horse_id, horse_number, horse_name, 
-            jockey, trainer, finish_time, finish_time_seconds
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+            finish_time
+        ) VALUES (?, ?, ?, ?, ?, ?)
     """
     try:
         preparado = session.prepare(query)
         session.execute(preparado, [
             str(race_id), int(finishing_position), str(horse_id),
-            int(horse_number), str(horse_name), str(jockey),
-            str(trainer), str(finish_time), float(finish_time_seconds)
+            int(horse_number), str(horse_name), 
+            str(finish_time)
         ])
         print(f"Resultado creado para el caballo {horse_name} en la carrera {race_id}.")
     except Exception as e:
@@ -36,8 +36,8 @@ def leer_resultado_especifico(session, race_id, finishing_position, horse_id):
     obteniendo el dato sin escanear ninguna otra partición del clúster.
     """
     query = """
-        SELECT * FROM resultados_por_carrera 
-        WHERE race_id = %s AND finishing_position = %s AND horse_id = %s
+        SELECT * FROM caballos_por_carrera 
+        WHERE race_id = %s AND finishing_position = %s AND horse_id = %s ALLOW FILTERING
     """
     try:
         filas = session.execute(query, (str(race_id), int(finishing_position), str(horse_id)))
@@ -49,13 +49,13 @@ def leer_resultado_especifico(session, race_id, finishing_position, horse_id):
         r = resultados[0]
         print(f"\n--- Registro Encontrado ---")
         print(f"Carrera: {r.race_id} | Puesto: {r.finishing_position} | Caballo: {r.horse_name}")
-        print(f"Jockey: {r.jockey} | Tiempo: {r.finish_time}")
+        print(f"Tiempo: {r.finish_time}")
         return r
     except Exception as e:
         print(f"Error en CRUD (Leer): {e}")
         return None
 
-def actualizar_tiempo_resultado(session, race_id, finishing_position, horse_id, nuevo_time, nuevo_time_seconds):
+def actualizar_tiempo_resultado(session, race_id, finishing_position, horse_id, nuevo_time):
     """
     Operación UPDATE: Mutación de atributos no-clave
     En Cassandra, UPDATE e INSERT comparten la misma lógica interna. Si la clave primaria
@@ -63,13 +63,13 @@ def actualizar_tiempo_resultado(session, race_id, finishing_position, horse_id, 
     Si la clave no existiera, crearía una nueva fila de forma automática sin lanzar errores.
     """
     query = """
-        UPDATE resultados_por_carrera
-        SET finish_time = ?, finish_time_seconds = ?
-        WHERE race_id = ? AND finishing_position = ? AND horse_id = ?
+        UPDATE caballos_por_carrera
+        SET finish_time = ?
+        WHERE race_id = ? AND finishing_position = ?
     """
     try:
         preparado = session.prepare(query)
-        session.execute(preparado, [str(nuevo_time), float(nuevo_time_seconds), str(race_id), int(finishing_position), str(horse_id)])
+        session.execute(preparado, [str(nuevo_time), str(race_id), int(finishing_position)])
         print(f"Tiempo actualizado con éxito para la carrera {race_id}.")
     except Exception as e:
         print(f"Error en CRUD (Actualizar): {e}")
@@ -83,11 +83,11 @@ def eliminar_resultado_especifico(session, race_id, finishing_position, horse_id
     posterior de compactación de archivos.
     """
     query = """
-        DELETE FROM resultados_por_carrera
-        WHERE race_id = %s AND finishing_position = %s AND horse_id = %s
+        DELETE FROM caballos_por_carrera
+        WHERE race_id = %s AND finishing_position = %s
     """
     try:
-        session.execute(query, (str(race_id), int(finishing_position), str(horse_id)))
+        session.execute(query, (str(race_id), int(finishing_position)))
         print(f"CRUD: Registro eliminado correctamente.")
     except Exception as e:
         print(f"Error en CRUD (Eliminar): {e}")

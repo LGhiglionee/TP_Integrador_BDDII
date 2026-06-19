@@ -41,7 +41,7 @@ def verJockeyPorPosicionFinalDelCaballo(cassandra_db, idCaballo):
 
     print(f"\n--- Datos de la tabla jockey_por_posicion_final_del_caballo (Caballo: {idCaballo}) ---")
     for fila in resultados:
-        print(f"Horse ID: {fila.horse_id} | Position: {fila.finishing_position} | Time Seconds: {fila.finish_time_seconds}s | Jockey: {fila.jockey} | Diferencia: {fila.diferencia} | Draw: {fila.draw}")
+        print(f"ID Caballo: {fila.horse_id} | Posicion: {fila.finishing_position} | Tiempo en segundos: {fila.finish_time_seconds}s | Jockey: {fila.jockey} | Diferencia: {fila.diferencia} | Sorteo: {fila.draw}")
 
 
 def verEntrenadorPorJockey(cassandra_db, nombreJockey):
@@ -61,7 +61,7 @@ def verEntrenadorPorJockey(cassandra_db, nombreJockey):
 
     print(f"\n--- Datos de la tabla entrenador_por_jockey (Jockey: {nombreJockey}) ---")
     for fila in resultados:
-        print(f"Jockey: {fila.jockey} | Time Seconds: {fila.finish_time_seconds}s | Trainer: {fila.trainer}")
+        print(f"Jockey: {fila.jockey} | Tiempo en segundos: {fila.finish_time_seconds}s | Entrenador: {fila.trainer}")
 
 
 def verTiempoPromedioPorDupla(cassandra_db, nombreJockey, nombreTrainer):
@@ -81,9 +81,9 @@ def verTiempoPromedioPorDupla(cassandra_db, nombreJockey, nombreTrainer):
 
     print(f"\n--- Datos de la tabla tiempo_promedio_por_dupla (Dupla: {nombreJockey} / {nombreTrainer}) ---")
     for fila in resultados:
-        print(f"Jockey: {fila.jockey} | Trainer: {fila.trainer} | Tiempo Promedio: {fila.promedio_tiempo_final} | Time Seconds: {fila.finish_time_seconds}s")
+        print(f"Jockey: {fila.jockey} | Entrenador: {fila.trainer} | Tiempo Promedio: {fila.promedio_tiempo_final}")
 
-def verCaballos(cassandra_db, idCaballo):
+def verCaballos(cassandra_db):
     """
     Escaneo de Tabla Dispersa.
     Recupera el conjunto global de entidades.
@@ -99,4 +99,4 @@ def verCaballos(cassandra_db, idCaballo):
 
     print(f"\n--- Datos de la tabla caballos ---")
     for fila in resultados:
-        print(f"Nombre: {fila.horse_name} | Numero: {fila.horse_number} | Peso: {fila.declared_horse_weight} | Id: {fila.horse_id}")
+        print(f"Id: {fila.horse_id} | Nombre: {fila.horse_name} | Numero: {fila.horse_number} | Peso: {fila.declared_horse_weight}lb")
