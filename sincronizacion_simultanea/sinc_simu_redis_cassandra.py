@@ -47,7 +47,7 @@ def finalizarCarreraSimultanea(redis_db, cassandra_session, idCarrera):
             continue
 
         c_name = caballo_redis.get("horse_name", "Desconocido")
-        f_time = caballo_redis.get("finish_time", "1.00.00")  # Puedes calcular un tiempo dinámico si lo deseas
+        f_time = caballo_redis.get("finish_time", "1.00.00")
 
         try:
             c_number = int(caballo_redis.get("horse_number", 0))
