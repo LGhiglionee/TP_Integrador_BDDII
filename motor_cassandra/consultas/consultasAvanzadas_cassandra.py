@@ -10,11 +10,10 @@ def verRendimientoCaballo(cassandra_db, idCaballo):
 
     print(f"\n--- Datos de la tabla rendimiento_caballo (ID: {idCaballo}) ---")
     for fila in resultados:
-        print(f"Horse ID: {fila.horse_id} | Carreras Corridas: {fila.carreras_corridas} | Victorias: {fila.victorias} | Promedio Posición: {fila.promedio_posicion}")
+        print(f"Caballo: {fila.horse_name} | Carreras corridas: {fila.carreras_corridas} | Victorias: {fila.victorias} | Posición promedio: {fila.promedio_posicion}")
 
 
 def verJockeyPorPosicionFinalDelCaballo(cassandra_db, idCaballo):
-    # Hace SELECT a la tabla jockey_por_posicion_final_del_caballo
     filas = cassandra_db.execute("""
         SELECT * FROM jockey_por_posicion_final_del_caballo WHERE horse_id = %s
     """, (str(idCaballo),))
@@ -59,3 +58,17 @@ def verTiempoPromedioPorDupla(cassandra_db, nombreJockey, nombreTrainer):
     print(f"\n--- Datos de la tabla tiempo_promedio_por_dupla (Dupla: {nombreJockey} / {nombreTrainer}) ---")
     for fila in resultados:
         print(f"Jockey: {fila.jockey} | Trainer: {fila.trainer} | Promedio Tiempo: {fila.promedio_tiempo_final} | Time Seconds: {fila.finish_time_seconds}s")
+
+def verCaballos(cassandra_db, idCaballo):
+    filas = cassandra_db.execute("""
+        SELECT * FROM caballos
+    """, (str(idCaballo),))
+    resultados = list(filas)
+
+    if not resultados:
+        print(f"No se encontraron registros en 'caballos'")
+        return
+
+    print(f"\n--- Datos de la tabla caballos ---")
+    for fila in resultados:
+        print(f"Nombre: {fila.horse_name} | Numero: {fila.horse_number} | Peso: {fila.declared_horse_weight} | Id: {fila.horse_id}")

@@ -13,17 +13,16 @@ def crearTablaCaballosPorCarreras(cassandra_db):
     cassandra_db.execute("""
         CREATE TABLE IF NOT EXISTS caballos_por_carrera (
             race_id text,
+            finishing_position int,
             horse_id text,
             horse_number int,
             horse_name text,
             declared_horse_weight int,
             draw int,
             finish_time text,
-            draw int,
-            PRIMARY KEY (race_id)
+            PRIMARY KEY (race_id, finishing_position)
         ) WITH CLUSTERING ORDER BY (finishing_position ASC)
     """)
-
 
 def crearTablaCaballos(cassandra_db):
     cassandra_db.execute("""
@@ -36,18 +35,17 @@ def crearTablaCaballos(cassandra_db):
         ) 
     """)
 
-
 def crearTablaRendimientoCaballo(cassandra_db):
     cassandra_db.execute("""
         CREATE TABLE IF NOT EXISTS rendimiento_caballo (
            horse_id text,
+           horse_name text,
            carreras_corridas int,
            victorias int,
            promedio_posicion double,
-            PRIMARY KEY (horse_id)
+           PRIMARY KEY (horse_id)
         ) 
     """)
-
 
 def crearTablaCarrerasPorCaballos(cassandra_db):
     cassandra_db.execute("""
@@ -58,10 +56,9 @@ def crearTablaCarrerasPorCaballos(cassandra_db):
             finishing_time text,
             finishing_position int,
             draw int,
-            PRIMARY KEY (horse_id)
+            PRIMARY KEY (horse_id, race_id)
         ) WITH CLUSTERING ORDER BY (race_id ASC)
     """)
-
 
 def crearTablaJockeyPorPosicionFinalDelCaballo(cassandra_db):
     cassandra_db.execute("""
@@ -72,10 +69,9 @@ def crearTablaJockeyPorPosicionFinalDelCaballo(cassandra_db):
             jockey text,
             diferencia int,
             draw int,
-            PRIMARY KEY (horse_id)
+            PRIMARY KEY (horse_id, finishing_position, finish_time_seconds)
         ) WITH CLUSTERING ORDER BY (finishing_position ASC, finish_time_seconds ASC)
     """)
-
 
 def crearTablaEntrenadorPorJockey(cassandra_db):
     cassandra_db.execute("""
@@ -83,7 +79,7 @@ def crearTablaEntrenadorPorJockey(cassandra_db):
             jockey text,
             finish_time_seconds int,
             trainer text,
-            PRIMARY KEY (jockey)
+            PRIMARY KEY (jockey, finish_time_seconds)
         ) WITH CLUSTERING ORDER BY (finish_time_seconds ASC)
     """)
 
@@ -94,6 +90,6 @@ def crearTablaTiempoPromedioPorDupla(cassandra_db):
             trainer text,
             promedio_tiempo_final int,
             finish_time_seconds int,
-            PRIMARY KEY (jockey, trainer)
+            PRIMARY KEY ((jockey, trainer), promedio_tiempo_final)
         ) WITH CLUSTERING ORDER BY (promedio_tiempo_final ASC)
     """)

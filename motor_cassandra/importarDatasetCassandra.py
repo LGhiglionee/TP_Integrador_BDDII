@@ -3,7 +3,8 @@ import os
 
 def convertir_int(valor):
     try:
-        return int(valor) if valor not in ("", None) else None
+        # Primero a float y luego a int, por si el CSV trae algo como "12.0"
+        return int(float(valor)) if valor not in ("", None) else None
     except:
         return None
 
@@ -27,15 +28,9 @@ def armar_valores_base(fila):
         "actual_weight": convertir_int(fila.get("actual_weight")),
         "declared_horse_weight": convertir_int(fila.get("declared_horse_weight")),
         "draw": convertir_int(fila.get("draw")),
-        "running_position_1": convertir_int(fila.get("running_position_1")),
-        "running_position_2": convertir_int(fila.get("running_position_2")),
-        "running_position_3": convertir_int(fila.get("running_position_3")),
         "finish_time": convertir_texto(fila.get("finish_time")),
         "finish_time_seconds": convertir_float(fila.get("finish_time_seconds")),
         "race_id": convertir_texto(fila.get("race_id")),
-        "father": convertir_texto(fila.get("father")),
-        "mother": convertir_texto(fila.get("mother")),
-        "gfather": convertir_texto(fila.get("gfather")),
     }
 
 def ImportarDataset(session):
@@ -55,94 +50,145 @@ def ImportarDataset(session):
             print("El archivo CSV está vacío.")
             return
 
-        print(f"Cantidad de filas leídas del CSV: {len(filas)}")
-        print(f"Columnas detectadas: {list(filas[0].keys())}")
+        print(f"Iniciando importación de {len(filas)} filas a las 7 tablas...")
 
-        importar_resultados_por_carrera(session, filas)
-        importar_historial_por_caballo(session, filas)
-        importar_historial_por_jockey(session, filas)
-        importar_caballos_por_entrenador(session, filas)
-        importar_caballos_por_padre(session, filas)
-        importar_mejores_tiempos_por_carrera(session, filas)
+        importar_caballos_por_carrera(session, filas)
+        importar_caballos(session, filas)
+        importar_carreras_por_caballos(session, filas)
+        importar_jockey_por_posicion(session, filas)
+        importar_entrenador_por_jockey(session, filas)
+        importar_tiempo_promedio_por_dupla(session, filas)
+        importar_rendimiento_caballo(session, filas)
 
-        print("Importación completa en Cassandra.")
+        print("¡Importación masiva completada en Cassandra!")
     except Exception as e:
         print(f"Se produjo un error al importar en Cassandra: {e}")
 
-def importar_resultados_por_carrera(session, filas):
-    query = "INSERT INTO resultados_por_carrera (race_id, finishing_position, horse_id, horse_number, horse_name, jockey, trainer, actual_weight, declared_horse_weight, draw, running_position_1, running_position_2, running_position_3, finish_time, finish_time_seconds, father, mother, gfather) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
-    insert_preparado = session.prepare(query)
-    cantidad = 0
-    for fila in filas:
-        datos = armar_valores_base(fila)
-        if datos["race_id"] is None or datos["finishing_position"] is None or datos["horse_id"] is None:
-            continue
-        valores = [datos["race_id"], datos["finishing_position"], datos["horse_id"], datos["horse_number"], datos["horse_name"], datos["jockey"], datos["trainer"], datos["actual_weight"], datos["declared_horse_weight"], datos["draw"], datos["running_position_1"], datos["running_position_2"], datos["running_position_3"], datos["finish_time"], datos["finish_time_seconds"], datos["father"], datos["mother"], datos["gfather"]]
-        session.execute(insert_preparado, valores)
-        cantidad += 1
-    print(f"Se insertaron {cantidad} registros en resultados_por_carrera.")
+# =======================================================
+# FUNCIONES DE IMPORTACIÓN DE CADA TABLA
+# =======================================================
 
-def importar_historial_por_caballo(session, filas):
-    query = "INSERT INTO historial_por_caballo (horse_id, race_id, finishing_position, horse_number, horse_name, jockey, trainer, actual_weight, declared_horse_weight, draw, running_position_1, running_position_2, running_position_3, finish_time, finish_time_seconds, father, mother, gfather) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
+def importar_caballos_por_carrera(session, filas):
+    query = """INSERT INTO caballos_por_carrera 
+               (race_id, finishing_position, horse_id, horse_number, horse_name, declared_horse_weight, draw, finish_time) 
+               VALUES (?, ?, ?, ?, ?, ?, ?, ?)"""
     insert_preparado = session.prepare(query)
-    cantidad = 0
+    cant = 0
     for fila in filas:
-        datos = armar_valores_base(fila)
-        if datos["horse_id"] is None or datos["race_id"] is None:
-            continue
-        valores = [datos["horse_id"], datos["race_id"], datos["finishing_position"], datos["horse_number"], datos["horse_name"], datos["jockey"], datos["trainer"], datos["actual_weight"], datos["declared_horse_weight"], datos["draw"], datos["running_position_1"], datos["running_position_2"], datos["running_position_3"], datos["finish_time"], datos["finish_time_seconds"], datos["father"], datos["mother"], datos["gfather"]]
-        session.execute(insert_preparado, valores)
-        cantidad += 1
-    print(f"Se insertaron {cantidad} registros en historial_por_caballo.")
+        d = armar_valores_base(fila)
+        if d["race_id"] is None or d["finishing_position"] is None or d["horse_id"] is None: continue
+        session.execute(insert_preparado, [d["race_id"], d["finishing_position"], d["horse_id"], d["horse_number"], d["horse_name"], d["declared_horse_weight"], d["draw"], d["finish_time"]])
+        cant += 1
+    print(f"-> {cant} registros en caballos_por_carrera.")
 
-def importar_historial_por_jockey(session, filas):
-    query = "INSERT INTO historial_por_jockey (jockey, race_id, horse_id, finishing_position, horse_number, horse_name, trainer, actual_weight, declared_horse_weight, draw, running_position_1, running_position_2, running_position_3, finish_time, finish_time_seconds, father, mother, gfather) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
+def importar_caballos(session, filas):
+    query = "INSERT INTO caballos (horse_id, horse_number, horse_name, declared_horse_weight) VALUES (?, ?, ?, ?)"
     insert_preparado = session.prepare(query)
-    cantidad = 0
+    cant = 0
     for fila in filas:
-        datos = armar_valores_base(fila)
-        if datos["jockey"] is None or datos["race_id"] is None or datos["horse_id"] is None:
-            continue
-        valores = [datos["jockey"], datos["race_id"], datos["horse_id"], datos["finishing_position"], datos["horse_number"], datos["horse_name"], datos["trainer"], datos["actual_weight"], datos["declared_horse_weight"], datos["draw"], datos["running_position_1"], datos["running_position_2"], datos["running_position_3"], datos["finish_time"], datos["finish_time_seconds"], datos["father"], datos["mother"], datos["gfather"]]
-        session.execute(insert_preparado, valores)
-        cantidad += 1
-    print(f"Se insertaron {cantidad} registros en historial_por_jockey.")
+        d = armar_valores_base(fila)
+        if d["horse_id"] is None: continue
+        session.execute(insert_preparado, [d["horse_id"], d["horse_number"], d["horse_name"], d["declared_horse_weight"]])
+        cant += 1
+    print(f"-> {cant} registros procesados en caballos.")
 
-def importar_caballos_por_entrenador(session, filas):
-    query = "INSERT INTO caballos_por_entrenador (trainer, horse_name, horse_id, race_id, finishing_position, jockey, horse_number, actual_weight, declared_horse_weight, draw, running_position_1, running_position_2, running_position_3, finish_time, finish_time_seconds, father, mother, gfather) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
+def importar_carreras_por_caballos(session, filas):
+    query = """INSERT INTO carreras_por_caballos 
+               (horse_id, race_id, horse_name, finishing_time, finishing_position, draw) 
+               VALUES (?, ?, ?, ?, ?, ?)"""
     insert_preparado = session.prepare(query)
-    cantidad = 0
+    cant = 0
     for fila in filas:
-        datos = armar_valores_base(fila)
-        if datos["trainer"] is None or datos["horse_name"] is None or datos["horse_id"] is None or datos["race_id"] is None:
-            continue
-        valores = [datos["trainer"], datos["horse_name"], datos["horse_id"], datos["race_id"], datos["finishing_position"], datos["jockey"], datos["horse_number"], datos["actual_weight"], datos["declared_horse_weight"], datos["draw"], datos["running_position_1"], datos["running_position_2"], datos["running_position_3"], datos["finish_time"], datos["finish_time_seconds"], datos["father"], datos["mother"], datos["gfather"]]
-        session.execute(insert_preparado, valores)
-        cantidad += 1
-    print(f"Se insertaron {cantidad} registros en caballos_por_entrenador.")
+        d = armar_valores_base(fila)
+        if d["horse_id"] is None or d["race_id"] is None: continue
+        session.execute(insert_preparado, [d["horse_id"], d["race_id"], d["horse_name"], d["finish_time"], d["finishing_position"], d["draw"]])
+        cant += 1
+    print(f"-> {cant} registros en carreras_por_caballos.")
 
-def importar_caballos_por_padre(session, filas):
-    query = "INSERT INTO caballos_por_padre (father, horse_name, horse_id, race_id, finishing_position, jockey, trainer, horse_number, actual_weight, declared_horse_weight, draw, running_position_1, running_position_2, running_position_3, finish_time, finish_time_seconds, mother, gfather) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
+def importar_jockey_por_posicion(session, filas):
+    query = """INSERT INTO jockey_por_posicion_final_del_caballo 
+               (horse_id, finishing_position, finish_time_seconds, jockey, diferencia, draw) 
+               VALUES (?, ?, ?, ?, ?, ?)"""
     insert_preparado = session.prepare(query)
-    cantidad = 0
+    cant = 0
     for fila in filas:
-        datos = armar_valores_base(fila)
-        if datos["father"] is None or datos["horse_name"] is None or datos["horse_id"] is None or datos["race_id"] is None:
-            continue
-        valores = [datos["father"], datos["horse_name"], datos["horse_id"], datos["race_id"], datos["finishing_position"], datos["jockey"], datos["trainer"], datos["horse_number"], datos["actual_weight"], datos["declared_horse_weight"], datos["draw"], datos["running_position_1"], datos["running_position_2"], datos["running_position_3"], datos["finish_time"], datos["finish_time_seconds"], datos["mother"], datos["gfather"]]
-        session.execute(insert_preparado, valores)
-        cantidad += 1
-    print(f"Se insertaron {cantidad} registros en caballos_por_padre.")
+        d = armar_valores_base(fila)
+        if d["horse_id"] is None or d["finishing_position"] is None or d["finish_time_seconds"] is None: continue
+        fts_int = int(d["finish_time_seconds"]) 
 
-def importar_mejores_tiempos_por_carrera(session, filas):
-    query = "INSERT INTO mejores_tiempos_por_carrera (race_id, finish_time_seconds, horse_id, horse_name, finishing_position, horse_number, jockey, trainer, actual_weight, declared_horse_weight, draw, running_position_1, running_position_2, running_position_3, finish_time, father, mother, gfather) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
+        posicion_final = d["finishing_position"]
+        draw = d["draw"]
+        
+        if draw is not None:
+            diferencia = draw - posicion_final
+        else:
+            diferencia = None
+
+        session.execute(insert_preparado, [d["horse_id"], d["finishing_position"], fts_int, d["jockey"], diferencia, d["draw"]])
+        cant += 1
+    print(f"-> {cant} registros en jockey_por_posicion_final_del_caballo.")
+
+def importar_entrenador_por_jockey(session, filas):
+    query = """INSERT INTO entrenador_por_jockey 
+               (jockey, finish_time_seconds, trainer) 
+               VALUES (?, ?, ?)"""
     insert_preparado = session.prepare(query)
-    cantidad = 0
+    cant = 0
     for fila in filas:
-        datos = armar_valores_base(fila)
-        if datos["race_id"] is None or datos["finish_time_seconds"] is None or datos["horse_id"] is None:
-            continue
-        valores = [datos["race_id"], datos["finish_time_seconds"], datos["horse_id"], datos["horse_name"], datos["finishing_position"], datos["horse_number"], datos["jockey"], datos["trainer"], datos["actual_weight"], datos["declared_horse_weight"], datos["draw"], datos["running_position_1"], datos["running_position_2"], datos["running_position_3"], datos["finish_time"], datos["father"], datos["mother"], datos["gfather"]]
-        session.execute(insert_preparado, valores)
-        cantidad += 1
-    print(f"Se insertaron {cantidad} registros en mejores_tiempos_por_carrera.")
+        d = armar_valores_base(fila)
+        if d["jockey"] is None or d["finish_time_seconds"] is None: continue
+        fts_int = int(d["finish_time_seconds"])
+        session.execute(insert_preparado, [d["jockey"], fts_int, d["trainer"]])
+        cant += 1
+    print(f"-> {cant} registros en entrenador_por_jockey.")
+
+def importar_tiempo_promedio_por_dupla(session, filas):
+    # Primero agrupamos la data con diccionarios de Python
+    duplas = {}
+    for fila in filas:
+        d = armar_valores_base(fila)
+        j, t, fts = d["jockey"], d["trainer"], d["finish_time_seconds"]
+        if j and t and fts is not None:
+            clave = (j, t)
+            if clave not in duplas:
+                duplas[clave] = {'suma': 0, 'count': 0}
+            duplas[clave]['suma'] += fts
+            duplas[clave]['count'] += 1
+            
+    query = """INSERT INTO tiempo_promedio_por_dupla 
+               (jockey, trainer, promedio_tiempo_final, finish_time_seconds) 
+               VALUES (?, ?, ?, ?)"""
+    insert_preparado = session.prepare(query)
+    cant = 0
+    
+    # Luego insertamos los resultados agrupados en Cassandra
+    for (j, t), stats in duplas.items():
+        promedio = int(stats['suma'] / stats['count'])
+        session.execute(insert_preparado, [j, t, promedio, promedio])
+        cant += 1
+    print(f"-> {cant} registros calculados y agrupados en tiempo_promedio_por_dupla.")
+
+def importar_rendimiento_caballo(session, filas):
+    caballos = {}
+    for fila in filas:
+        d = armar_valores_base(fila)
+        h, pos = d["horse_id"], d["finishing_position"]
+        nombre = d["horse_name"]
+        if h and pos is not None:
+            if h not in caballos:
+                caballos[h] = {'horse_name': nombre,'carreras': 0, 'victorias': 0, 'suma_pos': 0}
+            caballos[h]['carreras'] += 1
+            caballos[h]['suma_pos'] += pos
+            if pos == 1:
+                caballos[h]['victorias'] += 1
+                
+    query = """INSERT INTO rendimiento_caballo 
+               (horse_id, horse_name, carreras_corridas, victorias, promedio_posicion) 
+               VALUES (?, ?, ?, ?, ?)"""
+    insert_preparado = session.prepare(query)
+    cant = 0
+    for h, stats in caballos.items():
+        prom_pos = float(stats['suma_pos'] / stats['carreras'])
+        session.execute(insert_preparado, [h, stats['horse_name'], stats['carreras'], stats['victorias'], prom_pos])
+        cant += 1
+    print(f"-> {cant} registros calculados y agrupados en rendimiento_caballo.")

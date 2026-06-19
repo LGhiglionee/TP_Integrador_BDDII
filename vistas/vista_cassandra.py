@@ -13,8 +13,8 @@ import streamlit as st
 import io
 from contextlib import redirect_stdout
 
-from motor_cassandra.consultas.consultasBasicas_cassandra import *
-from motor_cassandra.consultas.consultasAvanzadas_cassandra import *
+from motor_cassandra.Consultas.consultasBasicas_cassandra import *
+from motor_cassandra.Consultas.consultasAvanzadas_cassandra import *
 from motor_cassandra.crud.crud_cassandra import *
 
 # =========================================================
@@ -194,20 +194,18 @@ def mostrar_cassandra(session):
                             "2. Ver rendimiento analítico de un jockey",
                             "3. Filtrar últimas N carreras de un caballo",
                             "4. Filtrar últimas N carreras de un jockey",
-                            "5. Ver mejores tiempos registrados en una carrera"
+                            "5. Ver todos los caballos"
                         ],
                         key="select_compleja_cassandra"
                     )
 
-                    if opcion and (opcion.startswith("3.") or opcion.startswith("4.")):
+                    if opcion and (opcion.startswith("3.") or opcion.startswith("4.") or opcion.startswith("5.")):
                         limite_filas = st.number_input("Cantidad de registros (Límite):",min_value=1,max_value=100,value=5,key="limite_compleja_cassandra")
 
                     if opcion.startswith("1.") or opcion.startswith("3."):
                         lbl = "Ingrese ID del Caballo:"
                     elif opcion.startswith("2.") or opcion.startswith("4."):
                         lbl = "Ingrese Nombre del Jockey:"
-                    else:
-                        lbl = "Ingrese ID de la Carrera:"
 
                     id_carrera = st.text_input(lbl, value="", placeholder="Ej: 2016-567",key="id_compleja_cassandra").strip()
                     ejecutar = st.button("Ejecutar Consulta Compleja",use_container_width=True,type="primary",key="btn_ejecutar_c_cassandra")
@@ -238,9 +236,9 @@ def mostrar_cassandra(session):
                 elif categoria == "Complejas" and opcion:
                     if opcion.startswith("1."):output_resultado = ejecutar_consulta_y_capturar_output(verRendimientoCaballo, session, id_carrera)
                     elif opcion.startswith("2."):output_resultado = ejecutar_consulta_y_capturar_output(verJockeyPorPosicionFinalDelCaballo, session, id_carrera)
-                    elif opcion.startswith("3."):output_resultado = ejecutar_consulta_y_capturar_output(verEntrenadorPorJockey, session, id_carrera, limite_filas)
+                    elif opcion.startswith("3."):output_resultado = ejecutar_consulta_y_capturar_output(verEntrenadorPorJockey, session, id_carrera)
                     elif opcion.startswith("4."):output_resultado = ejecutar_consulta_y_capturar_output(verTiempoPromedioPorDupla, session, id_carrera, limite_filas)
-                    elif opcion.startswith("5."):output_resultado = ejecutar_consulta_y_capturar_output(verMejoresTiemposPorCarrera, session, id_carrera)
+                    elif opcion.startswith("5."):output_resultado = ejecutar_consulta_y_capturar_output(verCaballos, session)
 
                 # ---------------------------------------------
                 # EJECUCIÓN DE OPERACIONES CRUD

@@ -21,7 +21,7 @@ def ConectarCassandra():
 
         crearTablas(session)
 
-        cantidad = contar_registros(session, "resultados_por_carrera")
+        cantidad = contar_registros(session, "caballos_por_carrera")
 
         if cantidad == 0:
             print("Base de datos Cassandra vacía. Iniciando importación...")
