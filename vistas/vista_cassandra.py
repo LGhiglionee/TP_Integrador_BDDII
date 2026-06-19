@@ -9,8 +9,8 @@ import streamlit as st
 import io
 from contextlib import redirect_stdout
 
-from motor_cassandra.Consultas.consultasBasicas_cassandra import *
-from motor_cassandra.Consultas.consultasAvanzadas_cassandra import *
+from motor_cassandra.consultas.consultasBasicas_cassandra import *
+from motor_cassandra.consultas.consultasAvanzadas_cassandra import *
 from motor_cassandra.crud.crud_cassandra import *
 
 # =========================================================
