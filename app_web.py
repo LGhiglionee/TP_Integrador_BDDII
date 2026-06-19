@@ -119,5 +119,6 @@ with tab_redis:
 
 with tab_cassandra:
     mostrar_cassandra(obtener_conexion_cassandra())
+
 with tab_neo4j:
     mostrar_neo4j(obtener_conexion_neo4j())

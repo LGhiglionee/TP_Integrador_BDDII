@@ -1,71 +1,68 @@
+"""
+Módulo de sincronización interestructural optimizado.
+Vuelca los resultados calculados en tiempo real en Redis hacia el almacenamiento físico de Cassandra.
+"""
 def finalizarCarreraSimultanea(redis_db, cassandra_session, idCarrera):
     """
     Sincronización simultánea autónoma.
-    Decodifica internamente los datos de Redis sin depender de funciones auxiliares externas.
+    Toma el ranking generado en el Sorted Set de Redis y persiste las posiciones
+    reales simuladas en la tabla 'caballos_por_carrera' de Apache Cassandra.
     """
     idCarrera = str(idCarrera).strip()
     carrera_key = f"carrera:{idCarrera}:info"
-    participantes_key = f"carrera:{idCarrera}:participantes"
+    ranking_key = f"carrera:{idCarrera}:ranking"
 
     if not redis_db.exists(carrera_key):
         print(f"La carrera {idCarrera} no existe en Redis.")
         return
 
-    # 1. ACTUALIZACIÓN EN REDIS (RAM)
     redis_db.hset(carrera_key, "estado", "finalizada")
-    print(f"(EN REDIS) Carrera {idCarrera} finalizada en RAM.")
+    print(f"Carrera {idCarrera} marcada como 'finalizada' en RAM.")
 
-    # Decodificamos la lista de participantes directamente aquí
-    participantes_raw = redis_db.smembers(participantes_key)
-    participantes = [p.decode("utf-8") if isinstance(p, bytes) else str(p) for p in participantes_raw]
+    ranking_simulado = redis_db.zrevrange(ranking_key, 0, -1)
 
-    if not participantes:
-        print("[REDIS] No hay participantes en memoria para transferir.")
+    if not ranking_simulado:
+        print("No se encontró un ranking simulado en memoria para esta carrera.")
         return
 
-    print(f"\n(EN SIMULTÁNEO EN CASSANDRA) Insertando {len(participantes)} datos en Cassandra...")
+    print(f"\nRealizando la sincronización. "
+          f"\nTransfiriendo {len(ranking_simulado)} competidores a Cassandra...")
 
-    # 2. PERSISTENCIA EN CASSANDRA (DISCO)
-    if cassandra_session is not None:
-        query = """
-            INSERT INTO resultados_por_carrera (
-                race_id, finishing_position, horse_id, horse_number, horse_name, jockey, trainer, finish_time, finish_time_seconds
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-        """
-        insert_preparado = cassandra_session.prepare(query)
+    if cassandra_session is None:
+        print("Error: La sesión de Cassandra es nula. No se pudo guardar en disco.")
+        return
 
-        for horse_id in participantes:
-            # Leemos el hash crudo de Redis
-            caballo_raw = redis_db.hgetall(f"carrera:{idCarrera}:caballo:{horse_id}")
+    query = """
+        INSERT INTO caballos_por_carrera (
+            race_id, finishing_position, horse_id, horse_number, horse_name, declared_horse_weight, draw, finish_time
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+    """
+    insert_preparado = cassandra_session.prepare(query)
 
-            # Lo normalizamos localmente (convierte bytes de Redis a strings de Python)
-            caballo_redis = {
-                (k.decode("utf-8") if isinstance(k, bytes) else str(k)): (v.decode("utf-8") if isinstance(v, bytes) else str(v))
-                for k, v in caballo_raw.items()
-            }
+    for posicion_final, horse_id in enumerate(ranking_simulado, start=1):
+        caballo_redis = redis_db.hgetall(f"carrera:{idCarrera}:caballo:{horse_id}")
 
-            # Extraemos los atributos reales
-            c_name = caballo_redis.get("horse_name", "Desconocido")
-            jockey = caballo_redis.get("jockey", "Desconocido")
-            trainer = caballo_redis.get("trainer", "Desconocido")
-            f_time = caballo_redis.get("finish_time", "1.10.00")
+        if not caballo_redis:
+            continue
 
-            try:
-                posicion = int(caballo_redis.get("finishing_position", 0))
-            except:
-                posicion = 0
+        c_name = caballo_redis.get("horse_name", "Desconocido")
+        f_time = caballo_redis.get("finish_time", "1.00.00")
 
-            try:
-                c_number = int(caballo_redis.get("horse_number", 0))
-            except:
-                c_number = 0
+        try:
+            c_number = int(caballo_redis.get("horse_number", 0))
+        except ValueError:
+            c_number = 0
 
-            try:
-                f_seconds = float(caballo_redis.get("finish_time_seconds", 70.0))
-            except:
-                f_seconds = 70.0
+        try:
+            c_weight = int(caballo_redis.get("declared_horse_weight", 0))
+        except ValueError:
+            c_weight = 0
 
-            cassandra_session.execute(insert_preparado, [
-                idCarrera, posicion, horse_id, c_number, c_name, jockey, trainer, f_time, f_seconds
-            ])
-            print(f" El caballo {c_name} con ID: ({horse_id}) en posición {posicion}° fue insertado en Cassandra.")
+        try:
+            draw_val = int(caballo_redis.get("draw", 0))
+        except ValueError:
+            draw_val = 0
+
+        cassandra_session.execute(insert_preparado, [
+            idCarrera, int(posicion_final), str(horse_id), c_number, c_name, c_weight, draw_val, f_time
+        ])

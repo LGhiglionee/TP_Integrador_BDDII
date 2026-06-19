@@ -18,7 +18,6 @@ from motor_redis.consultas.consultasAvanzadas_redis import *
 from motor_redis.crud.crud_redis import *
 from sincronizacion_simultanea.sinc_simu_redis_cassandra import finalizarCarreraSimultanea
 
-
 # =========================================================
 # FUNCIÓN AUXILIAR PARA CAPTURAR SALIDA DE CONSOLA
 # =========================================================

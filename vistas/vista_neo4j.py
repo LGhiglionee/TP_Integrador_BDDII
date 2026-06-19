@@ -74,7 +74,6 @@ def ejecutar_consulta_y_capturar_output(func, session, valor_input=None):
 def armar_salida_insercion_neo4j(datos):
     """
    Genera un resumen en texto plano del registro insertado en Neo4j.
-
    Este texto se muestra en la consola de salida de Streamlit y también
    se ofrece como archivo TXT descargable.
    """
@@ -111,12 +110,10 @@ def armar_salida_insercion_neo4j(datos):
 def armar_salida_borrado_neo4j(tipo_borrado, horse_id, race_id=None, resultado=None):
     """
     Genera un resumen en texto plano de una operación de borrado en Neo4j.
-
     Permite registrar si se eliminó una participación puntual en una carrera
     o si se eliminó completamente un caballo del grafo.
     """
     salida = "Se eliminó el registro de Neo4j\n\n"
-
     salida += f"ID Caballo: {horse_id}\n"
 
     if race_id:
@@ -175,7 +172,6 @@ def mostrar_neo4j(driver):
     with col1:
         with st.container(border=True):
             st.markdown("### Panel de Control")
-
             modo_operacion = st.radio("Modo de Operación",["Modificar Datos", "Consultas/Simulación"],horizontal=True,key="modo_operacion_neo4j")
 
             # =====================================================
@@ -189,7 +185,6 @@ def mostrar_neo4j(driver):
                 # -------------------------------------------------
                 if categoria_crud == "Inserción":
                     st.markdown("**Inserción de registro en Neo4j**")
-
                     # Datos obligatorios para identificar caballo y carrera.
                     horse_id = st.text_input("ID Caballo (Obligatorio):",value="",placeholder="Ej: A177",key="neo4j_insert_horse_id").upper().strip()
                     horse_name = st.text_input("Nombre del Caballo (Obligatorio):",value="",placeholder="Ej: ENCORE BOY",key="neo4j_insert_horse_name").upper().strip()
@@ -259,7 +254,6 @@ def mostrar_neo4j(driver):
 
                         colBusqA, colBusqB = st.columns(2)
                         with colBusqA:horse_id_borrar = st.text_input("ID Caballo (Obligatorio):",value="",placeholder="Ej: A177",key="neo4j_delete_horse_id").upper().strip()
-
                         with colBusqB:race_id_borrar = st.text_input("ID Carrera (Obligatorio):",value="",placeholder="Ej: 2016-783",key="neo4j_delete_race_id").upper().strip()
 
                     else:

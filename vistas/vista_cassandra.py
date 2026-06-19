@@ -9,8 +9,8 @@ import streamlit as st
 import io
 from contextlib import redirect_stdout
 
-from motor_cassandra.Consultas.consultasBasicas_cassandra import *
-from motor_cassandra.Consultas.consultasAvanzadas_cassandra import *
+from motor_cassandra.consultas.consultasBasicas_cassandra import *
+from motor_cassandra.consultas.consultasAvanzadas_cassandra import *
 from motor_cassandra.crud.crud_cassandra import *
 
 # =========================================================
@@ -18,8 +18,7 @@ from motor_cassandra.crud.crud_cassandra import *
 # =========================================================
 def ejecutar_consulta_y_capturar_output(func, *args, **kwargs):
     """
-    Ejecuta una función de consulta Cassandra y captura todo lo que imprime
-    por consola.
+    Ejecuta una función de consulta Cassandra y captura todo lo que imprime por consola.
     """
     f = io.StringIO()
     with redirect_stdout(f):
@@ -53,9 +52,8 @@ def mostrar_cassandra(session):
     output_resultado = ""
     opcion = None
     categoria = None
-    parametro = ""
     id_carrera = ""
-    id_trainer = ""  # Agregado para soportar consultas de doble parámetro (Jockey/Entrenador)
+    id_trainer = ""
 
     # Variables específicas para operaciones CRUD.
     categoria_crud = None
@@ -69,7 +67,6 @@ def mostrar_cassandra(session):
     finish_time = ""
     finish_time_seconds = None
     confirmar_borrado = False
-    nombre_operacion = ""
 
     # Distribución principal:columna izquierda para controles, columna derecha para resultados.
     col1, col2 = st.columns([1, 1.8])

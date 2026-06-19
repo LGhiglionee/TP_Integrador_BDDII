@@ -1,4 +1,15 @@
+"""
+Módulo de consultas analíticas e históricas para Apache Cassandra.
+Implementa el acceso a datos bajo la metodología de Diseño Orientado a Consultas,
+ejecutando búsquedas directas sobre claves de partición
+para garantizar lecturas optimizadas de tiempo constante.
+"""
 def verRendimientoCaballo(cassandra_db, idCaballo):
+    """
+    Recupera métricas consolidadas de rendimiento.
+    Realiza un Key-Lookup exacto sobre la Partition Key (horse_id), lo que permite
+    al coordinador redirigir la query al nodo específico del anillo sin escaneos distribuidos.
+    """
     filas = cassandra_db.execute("""
         SELECT * FROM rendimiento_caballo WHERE horse_id = %s
     """, (str(idCaballo),))
@@ -14,6 +25,11 @@ def verRendimientoCaballo(cassandra_db, idCaballo):
 
 
 def verJockeyPorPosicionFinalDelCaballo(cassandra_db, idCaballo):
+    """
+    Consulta sobre filas anchas (Wide Rows).
+    Busca por la Partition Key (horse_id). Los registros devueltos se leen de forma
+    secuencial directa desde la SSTable en disco, aprovechando la ordenación física predefinida.
+    """
     filas = cassandra_db.execute("""
         SELECT * FROM jockey_por_posicion_final_del_caballo WHERE horse_id = %s
     """, (str(idCaballo),))
@@ -29,7 +45,11 @@ def verJockeyPorPosicionFinalDelCaballo(cassandra_db, idCaballo):
 
 
 def verEntrenadorPorJockey(cassandra_db, nombreJockey):
-    # Hace SELECT a la tabla entrenador_por_jockey
+    """
+    Búsqueda desnormalizada por actor.
+    Esta tabla fue creada específicamente para responder este patrón de acceso,
+    utilizando al 'jockey' como la Partition Key obligatoria para la cláusula WHERE.
+    """
     filas = cassandra_db.execute("""
         SELECT * FROM entrenador_por_jockey WHERE jockey = %s
     """, (str(nombreJockey),))
@@ -45,7 +65,11 @@ def verEntrenadorPorJockey(cassandra_db, nombreJockey):
 
 
 def verTiempoPromedioPorDupla(cassandra_db, nombreJockey, nombreTrainer):
-    # Hace SELECT a la tabla tiempo_promedio_por_dupla usando la llave primaria compuesta (jockey, trainer)
+    """
+    Consulta compuesta sobre Clave Primaria.
+    Para que Cassandra responda sin lanzar una excepción de rendimiento, la query provista
+    incluye todos los componentes lógicos de la clave de partición (jockey Y trainer).
+    """
     filas = cassandra_db.execute("""
         SELECT * FROM tiempo_promedio_por_dupla WHERE jockey = %s AND trainer = %s
     """, (str(nombreJockey), str(nombreTrainer)))
@@ -60,9 +84,13 @@ def verTiempoPromedioPorDupla(cassandra_db, nombreJockey, nombreTrainer):
         print(f"Jockey: {fila.jockey} | Trainer: {fila.trainer} | Tiempo Promedio: {fila.promedio_tiempo_final} | Time Seconds: {fila.finish_time_seconds}s")
 
 def verCaballos(cassandra_db, idCaballo):
+    """
+    Escaneo de Tabla Dispersa.
+    Recupera el conjunto global de entidades.
+    """
     filas = cassandra_db.execute("""
         SELECT * FROM caballos
-    """, (str(idCaballo),))
+    """)
     resultados = list(filas)
 
     if not resultados:

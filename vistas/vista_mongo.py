@@ -45,7 +45,6 @@ def ejecutar_consulta_y_capturar_output(func, *args, **kwargs):
 # =========================================================
 # VALIDACIÓN Y CONVERSIÓN DE DATOS
 # =========================================================
-
 def validar_y_tipar_datos(inputs_crudos):
     """
     Recibe los valores ingresados desde la interfaz y construye un documento
@@ -130,7 +129,6 @@ def mostrar_mongo(collection):
     with col1:
         with st.container(border=True):
             st.markdown("### Panel de Control")
-            
             modo_operacion = st.radio("Modo de Operación", ["Modificar Datos", "Consultas/Simulación"], horizontal=True,key="modo_operacion_mongo")
 
             # =====================================================
@@ -317,16 +315,15 @@ def mostrar_mongo(collection):
                 
                 if categoria2 == "Simples":
                     opcion = st.selectbox("Seleccione la consulta simple:",
-                  [
+                        [
                         "1. Obtener todos los caballos entrenados por P F YIU",
                         "2. Todos los caballos que ganaron alguna carrera",
                         "3. Caballos que pesan menos de 1000 libras",
                         "4. Cantidad de carreras que se corrieron",
                         "5. Caballos con tiempos menores a 1.23.00"
-                    ],
-                    key="select_simple_mongo"
-                )
-
+                        ],
+                        key="select_simple_mongo"
+                    )
                     ejecutar_consulta = st.button("Ejecutar Consulta Simple", use_container_width=True, type="primary",key="btn_simple_mongo")
                 
                 elif categoria2 == "Complejas":
@@ -339,7 +336,7 @@ def mostrar_mongo(collection):
                         "5. TOP 10 de tiempos más rápidos"
                         ],
                       key="select_compleja_mongo"
-                        )
+                    )
                     ejecutar_consulta = st.button("Ejecutar Consulta Compleja", use_container_width=True, type="primary", key="btn_compleja_mongo")
                     
                 elif categoria2 == "Historial por Nombre":

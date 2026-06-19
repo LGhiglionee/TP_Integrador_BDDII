@@ -1,28 +1,23 @@
 """
 Módulo de consultas analíticas para Neo4j (Cypher).
 Utiliza el motor de grafos para navegar linaje, patrones de entrenamiento y
-comportamiento genealógico mediante recorridos profundos (depth-first traversal).
+comportamiento genealógico mediante recorridos profundos.
 """
 def buscar_caballo_nombre(session, nombre):
     """
-    Consulta básica: Navega la relación direccional [:CORRIO] entre
-    nodos Caballo y Carrera.
+    Navega la relación direccional [:CORRIO] entre nodos Caballo y Carrera.
     """
     try:
         nombre = nombre.upper().strip()
-
         query = """
         MATCH (c:Caballo)-[r:CORRIO]->(race:Carrera)
         WHERE toUpper(c.nombre) = $nombre_caballo
         RETURN 
-            c.nombre AS nombre, 
-            r.posicion AS posicion, 
-            race.id AS carrera_id
+            c.nombre AS nombre, r.posicion AS posicion, race.id AS carrera_id
         ORDER BY race.id
         """
 
         resultados = list(session.run(query, nombre_caballo=nombre))
-
         if not resultados:
             print(f"No se encontraron registros para el caballo: {nombre}")
         else:
@@ -40,13 +35,9 @@ def recomendacion_entrenador_matchmaking(session, nombre):
     """
     try:
         nombre = nombre.upper().strip()
-
         query = """
         MATCH (c:Caballo)-[:HIJO_DE]->(progenitor:Caballo)
-        WHERE toUpper(c.nombre) = $nombre_caballo
-          AND progenitor.nombre IS NOT NULL
-          AND progenitor.nombre <> 'Desconocido'
-          AND progenitor.nombre <> 'Desconocida'
+        WHERE toUpper(c.nombre) = $nombre_caballoAND progenitor.nombre IS NOT NULLAND progenitor.nombre <> 'Desconocido'AND progenitor.nombre <> 'Desconocida'
 
         MATCH (progenitor)<-[:HIJO_DE]-(hermano:Caballo)-[:ENTRENADO_POR]->(e:Entrenador)
         WHERE e.nombre <> 'Desconocido'
@@ -58,14 +49,12 @@ def recomendacion_entrenador_matchmaking(session, nombre):
         WITH e, count(DISTINCT hermano) AS hermanos_entrenados
 
         RETURN 
-            e.nombre AS entrenador, 
-            hermanos_entrenados
+            e.nombre AS entrenador, hermanos_entrenados
         ORDER BY hermanos_entrenados DESC
         LIMIT 1
         """
 
         resultados = list(session.run(query, nombre_caballo=nombre))
-
         if not resultados:
             print(f"No hay suficiente historial familiar o linaje cargado para recomendar un entrenador a {nombre}.")
         else:
@@ -89,11 +78,7 @@ def caballos_similares_diamante(session, nombre):
         query = """
         MATCH (c1:Caballo)-[:NIETO_DE]->(abuelo:Caballo)
         MATCH (c1)-[:ENTRENADO_POR]->(e:Entrenador)
-        WHERE toUpper(c1.nombre) = $nombre_caballo
-          AND abuelo.nombre IS NOT NULL
-          AND abuelo.nombre <> 'Desconocido'
-          AND abuelo.nombre <> 'Desconocida'
-          AND e.nombre <> 'Desconocido'
+        WHERE toUpper(c1.nombre) = $nombre_caballoAND abuelo.nombre IS NOT NULLAND abuelo.nombre <> 'Desconocido'AND abuelo.nombre <> 'Desconocida'AND e.nombre <> 'Desconocido'
 
         MATCH (c2:Caballo)-[:NIETO_DE]->(abuelo)
         MATCH (c2)-[:ENTRENADO_POR]->(e)
@@ -104,15 +89,12 @@ def caballos_similares_diamante(session, nombre):
           AND c2.nombre <> 'Desconocida'
 
         RETURN DISTINCT 
-            c2.nombre AS similar, 
-            abuelo.nombre AS abuelo, 
-            e.nombre AS entrenador
+            c2.nombre AS similar, abuelo.nombre AS abuelo, e.nombre AS entrenador
         ORDER BY c2.nombre
         LIMIT 30
         """
 
         resultados = list(session.run(query, nombre_caballo=nombre))
-
         if not resultados:
             print(f"No se encontraron patrones de diamante o caballos similares para: {nombre}")
         else:
@@ -128,7 +110,7 @@ def caballos_similares_diamante(session, nombre):
 
 def recomendacion_apuestas_linaje(session, nombre):
     """
-    Análisis estadístico sobre grafos: Calcula el éxito (victorias) de un linaje
+    Análisis estadístico sobre grafos: Calcula el éxito de un linaje
     directo para predecir probabilidades de nuevos ejemplares.
     """
     try:
@@ -154,15 +136,12 @@ def recomendacion_apuestas_linaje(session, nombre):
           AND r2.posicion <> 1
 
         RETURN DISTINCT 
-            caballo_sugerido.nombre AS sugerido, 
-            padre.nombre AS padre, 
-            victorias_familiares
+            caballo_sugerido.nombre AS sugerido, padre.nombre AS padre, victorias_familiares
         ORDER BY victorias_familiares DESC, caballo_sugerido.nombre
         LIMIT 3
         """
 
         resultados = list(session.run(query, nombre_caballo=nombre))
-
         if not resultados:
             print(f"La familia directa de {nombre} no registra un linaje estadísticamente ganador para apuestas.")
         else:
@@ -209,7 +188,6 @@ def linea_sangre_caballo(session, nombre):
         """
 
         resultados = list(session.run(query, nombre_caballo=nombre))
-
         if not resultados:
             print(f"No se encontró información para: {nombre}")
         else:
@@ -259,16 +237,12 @@ def ranking_entrenadores_por_linaje(session, nombre_padre):
             count(r) AS cantidad_carreras
 
         RETURN 
-            e.nombre AS entrenador, 
-            promedio_posicion, 
-            cantidad_caballos,
-            cantidad_carreras
+            e.nombre AS entrenador, promedio_posicion, cantidad_caballos,cantidad_carreras
 
         ORDER BY promedio_posicion ASC
         """
 
         resultados = list(session.run(query, nombre_padre=nombre_padre))
-
         if not resultados:
             print(f"No hay registros suficientes para '{nombre_padre}'.")
         else:

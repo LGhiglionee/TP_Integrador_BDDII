@@ -10,7 +10,6 @@ from motor_redis.conectarRedis import leerDataset
 # =========================
 # AUXILIARES
 # =========================
-
 def _normalizar_valor(valor):
     if isinstance(valor, bytes):
         return valor.decode("utf-8")
@@ -32,7 +31,7 @@ def _preparar_mapping(diccionario):
     }
 
 # =========================
-# CREACIÓN DE CARRERA (INGESTA TEMPORAL)
+# CREACIÓN DE CARRERA
 # =========================
 def crearCarrera(redis_db, idCarrera):
     """
@@ -52,7 +51,6 @@ def crearCarrera(redis_db, idCarrera):
         return
 
     caballos = list(leerDataset(filtros={"race_id": idCarrera}))
-
     if not caballos:
         print(f"No se encontraron caballos para la carrera {idCarrera}.")
         return
@@ -76,7 +74,7 @@ def crearCarrera(redis_db, idCarrera):
 
 
 # =========================
-# GESTIÓN DE APUESTAS (TRANSACCIONAL)
+# GESTIÓN DE APUESTAS
 # =========================
 def generarApuestasFicticias(redis_db, idCarrera, cantidadApuestas):
     """
@@ -136,18 +134,14 @@ def generarApuestasFicticias(redis_db, idCarrera, cantidadApuestas):
 
     print(f"Se generaron {cantidadApuestas} apuestas.")
 
-
 # =========================
 # VER ESTADO DE CARRERA
 # =========================
 def verEstadoCarrera(redis_db, idCarrera):
     """
     Recupera el estado global de una carrera mediante un Hash.
-    Esta es una operación O(1), extremadamente eficiente al traer todos los campos
-    del estado de la carrera en un solo viaje de red.
     """
     idCarrera = str(idCarrera).strip()
-
     carrera_key = f"carrera:{idCarrera}:info"
 
     if not redis_db.exists(carrera_key):
@@ -165,7 +159,6 @@ def verEstadoCarrera(redis_db, idCarrera):
         print(f"Ganador: {carrera.get('nombre_ganador', carrera.get('ganador'))}")
         print(f"Puntaje ganador: {carrera.get('puntaje_ganador', 0)}")
 
-
 # =========================
 # VER PARTICIPANTES
 # =========================
@@ -176,7 +169,6 @@ def verParticipantes(redis_db, idCarrera):
     y luego realiza una búsqueda indexada por cada ID (HGETALL).
     """
     idCarrera = str(idCarrera).strip()
-
     participantes_key = f"carrera:{idCarrera}:participantes"
 
     # SMEMBERS obtiene el set completo de participantes sin duplicados
@@ -210,7 +202,6 @@ def verApuestasActivas(redis_db, idCarrera):
     en una sola operación de red.
     """
     idCarrera = str(idCarrera).strip()
-
     apuestas_key = f"carrera:{idCarrera}:apuestas"
 
     # SMEMBERS devuelve todos los identificadores de apuestas en una única llamada,

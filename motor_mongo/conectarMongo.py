@@ -18,7 +18,7 @@ def ConectarMongo(nombre_base,nombre_coleccion):
         db = client[nombre_base] # Base de datos
         collection = db[nombre_coleccion] # Colección
 
-        # Verificación de estado: si no hay documentos, iniciamos la ingesta (Lazy Loading)
+        # Verificación de estado: si no hay documentos, iniciamos la ingesta
         if collection.count_documents({}) == 0:
             print("Base de datos vacía. Iniciando importación...")
             ImportarDataset(collection)
@@ -35,7 +35,7 @@ def ConectarMongo(nombre_base,nombre_coleccion):
 def ImportarDataset(collection):
     """
     Proceso de Ingesta (ETL): Lee el CSV, normaliza el formato de datos
-    mediante convertir_fila y realiza una inserción masiva (bulk insert).
+    mediante convertir_fila y realiza una inserción masiva.
     """
     try:
         # Obtención dinámica de la ruta del archivo mediante os.path
