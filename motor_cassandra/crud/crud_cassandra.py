@@ -1,4 +1,15 @@
+"""
+Módulo de operaciones CRUD (Create, Read, Update, Delete) para Apache Cassandra.
+Implementa mutaciones atómicas y lecturas directas por clave primaria completa,
+optimizando el rendimiento a través de sentencias precompiladas (Prepared Statements)
+y minimizando la latencia de coordinación en el anillo distribuido.
+"""
 def crear_resultado_manual(session, race_id, finishing_position, horse_id, horse_number, horse_name, jockey, trainer, finish_time, finish_time_seconds):
+    """
+    Operación CREATE: Inserción directa en una fila ancha (Wide Row).
+    Esto permite validar los tipos de datos en el cliente y serializar los parámetros de forma eficiente,
+    evitando inyecciones y reduciendo el procesamiento sintáctico en escrituras consecutivas.
+    """
     query = """
         INSERT INTO resultados_por_carrera (
             race_id, finishing_position, horse_id, horse_number, horse_name, 
@@ -17,6 +28,13 @@ def crear_resultado_manual(session, race_id, finishing_position, horse_id, horse
         print(f"Error en CRUD (Crear): {e}")
 
 def leer_resultado_especifico(session, race_id, finishing_position, horse_id):
+    """
+    Operación READ: Búsqueda puntual por Clave Primaria completa.
+    Al incluir de manera exacta en el WHERE tanto la Partition Key (race_id) como las
+    Clustering Keys (finishing_position, horse_id), la consulta se resuelve con complejidad O(1).
+    El coordinador determina instantáneamente el nodo réplica exacto que almacena la fila,
+    obteniendo el dato sin escanear ninguna otra partición del clúster.
+    """
     query = """
         SELECT * FROM resultados_por_carrera 
         WHERE race_id = %s AND finishing_position = %s AND horse_id = %s
@@ -38,6 +56,12 @@ def leer_resultado_especifico(session, race_id, finishing_position, horse_id):
         return None
 
 def actualizar_tiempo_resultado(session, race_id, finishing_position, horse_id, nuevo_time, nuevo_time_seconds):
+    """
+    Operación UPDATE: Mutación de atributos no-clave
+    En Cassandra, UPDATE e INSERT comparten la misma lógica interna. Si la clave primaria
+    especificada en el WHERE ya existe, el motor pisa los campos indicados guardando un nuevo timestamp.
+    Si la clave no existiera, crearía una nueva fila de forma automática sin lanzar errores.
+    """
     query = """
         UPDATE resultados_por_carrera
         SET finish_time = ?, finish_time_seconds = ?
@@ -51,6 +75,13 @@ def actualizar_tiempo_resultado(session, race_id, finishing_position, horse_id, 
         print(f"Error en CRUD (Actualizar): {e}")
 
 def eliminar_resultado_especifico(session, race_id, finishing_position, horse_id):
+    """
+    Operación DELETE: Eliminación lógica mediante Tombstones.
+    Debido a que los archivos SSTables en disco son inmutables, Cassandra no sobreescribe ni borra
+    físicamente el registro en caliente. En su lugar, esta operación escribe un marcador lógico (Tombstone)
+    que oculta el registro en las lecturas. El dato se purgará definitivamente del disco durante el proceso
+    posterior de compactación de archivos.
+    """
     query = """
         DELETE FROM resultados_por_carrera
         WHERE race_id = %s AND finishing_position = %s AND horse_id = %s
