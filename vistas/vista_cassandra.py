@@ -4,10 +4,6 @@ Vista de Cassandra para el dashboard EQUIDATA.
 Este módulo construye la interfaz web correspondiente al motor Cassandra.
 Permite organizar las consultas simples y complejas sobre tablas columnarizadas,
 manteniendo una estructura visual homogénea con el resto de los motores del TP.
-
-Actualmente la vista deja preparada la estructura de consultas y CRUD.
-Las funciones específicas de Cassandra pueden conectarse dentro de los bloques
-marcados como pendientes.
 """
 import streamlit as st
 import io
@@ -59,6 +55,7 @@ def mostrar_cassandra(session):
     categoria = None
     parametro = ""
     id_carrera = ""
+    id_trainer = ""  # Agregado para soportar consultas de doble parámetro (Jockey/Entrenador)
 
     # Variables específicas para operaciones CRUD.
     categoria_crud = None
@@ -90,6 +87,7 @@ def mostrar_cassandra(session):
             # -----------------------------------------------------
             if modo_operacion == "Modificar Datos":
                 categoria_crud = st.radio("Operación CRUD",["Inserción","Lectura","Actualización","Borrado"],key="crud_cassandra")
+                
                 # -------------------------------------------------
                 # CRUD - INSERCIÓN
                 # -------------------------------------------------
@@ -147,7 +145,7 @@ def mostrar_cassandra(session):
                     id_carrera = st.text_input("Ingrese ID de la Carrera:",value="",placeholder="Ej: 2016-567",key="id_delete_cassandra").strip()
                     finishing_position = st.number_input("Ingrese Posición de Llegada:",min_value=1,max_value=100,value=1,key="pos_delete_cassandra")
                     horse_id = st.text_input("Ingrese ID del caballo:",value="",placeholder="Ej: 12345",key="horse_delete_cassandra").strip()
-                    confirmar_borrado = st.checkbox("Confirmo que deseo borrar este resultado de carrera específico.",key="confirm_delete_resultado_cassandra")
+                    confirmar_borrado = st.checkbox("Confirmo que deseo borrar este resultado.",key="confirm_delete_resultado_cassandra")
 
                     ejecutar = st.button("Ejecutar Borrado",use_container_width=True,type="primary",key="btn_delete_cassandra")
 
@@ -174,13 +172,12 @@ def mostrar_cassandra(session):
                     )
 
                     if opcion.startswith("4."):
-                        lbl = "Ingrese ID del Caballo:"
+                        id_carrera = st.text_input("Ingrese ID del Caballo:", value="", placeholder="Ej: T369",key="id_simple_caballo").strip()
                     elif opcion.startswith("5."):
-                        lbl = "Ingrese Nombre del Jockey:"
+                        id_carrera = st.text_input("Ingrese Nombre del Jockey:", value="", placeholder="Ej: K C Leung",key="id_simple_jockey").strip()
                     else:
-                        lbl = "Ingrese ID de la Carrera:"
+                        id_carrera = st.text_input("Ingrese ID de la Carrera:", value="", placeholder="Ej: 2016-567",key="id_simple_carrera").strip()
 
-                    id_carrera = st.text_input(lbl, value="", placeholder="Ej: 2016-567",key="id_simple_cassandra").strip()
                     ejecutar = st.button("Ejecutar Consulta Simple",use_container_width=True,type="primary",key="btn_ejecutar_s_cassandra")
 
                 # -------------------------------------------------
@@ -191,9 +188,9 @@ def mostrar_cassandra(session):
                         "Seleccione la consulta compleja:",
                         [
                             "1. Ver rendimiento analítico de un caballo",
-                            "2. Ver rendimiento analítico de un jockey",
-                            "3. Filtrar últimas N carreras de un caballo",
-                            "4. Filtrar últimas N carreras de un jockey",
+                            "2. Ver la posicion en la termino un caballo con un jockey",
+                            "3. Ver entrenadores que trabajaron junto a un jockey",
+                            "4. Ver actuaciones promedio de duplas jockey/entrenador",
                             "5. Ver todos los caballos"
                         ],
                         key="select_compleja_cassandra"
@@ -202,12 +199,16 @@ def mostrar_cassandra(session):
                     if opcion and (opcion.startswith("3.") or opcion.startswith("4.") or opcion.startswith("5.")):
                         limite_filas = st.number_input("Cantidad de registros (Límite):",min_value=1,max_value=100,value=5,key="limite_compleja_cassandra")
 
-                    if opcion.startswith("1.") or opcion.startswith("3."):
-                        lbl = "Ingrese ID del Caballo:"
-                    elif opcion.startswith("2.") or opcion.startswith("4."):
-                        lbl = "Ingrese Nombre del Jockey:"
+                    if opcion.startswith("1."):
+                        id_carrera = st.text_input("Ingrese ID del Caballo:", value="", placeholder="Ej: T369",key="id_compleja_1").strip()
+                    elif opcion.startswith("2.") or opcion.startswith("3."):
+                        id_carrera = st.text_input("Ingrese Nombre del Jockey:", value="", placeholder="Ej: K C Leung",key="id_compleja_2_3").strip()
+                    elif opcion.startswith("4."):
+                        id_carrera = st.text_input("Ingrese Nombre del jockey:", value="", placeholder="Ej: K C Leung",key="id_compleja_4_j").strip()
+                        id_trainer = st.text_input("Ingrese Nombre del entrenador:", value="", placeholder="Ej: P O'Sullivan",key="id_compleja_4_t").strip()
+                    elif opcion.startswith("5."):
+                        id_carrera = st.text_input("Ingrese ID del Caballo:", value="", placeholder="Ej: T369",key="id_compleja_5").strip()
 
-                    id_carrera = st.text_input(lbl, value="", placeholder="Ej: 2016-567",key="id_compleja_cassandra").strip()
                     ejecutar = st.button("Ejecutar Consulta Compleja",use_container_width=True,type="primary",key="btn_ejecutar_c_cassandra")
 
     # =========================================================
@@ -215,30 +216,35 @@ def mostrar_cassandra(session):
     # =========================================================
     with col2:
         st.subheader("Consola de Salida")
-        # Ejecuta la consulta seleccionada desde el panel izquierdo.
+        
         if ejecutar:
-            if not id_carrera:
-                st.warning("El parámetro o ID de búsqueda es obligatorio para todas las consultas.")
+            # Validaciones para evitar búsquedas nulas
+            if modo_operacion == "Consultas/Simulación" and categoria == "Complejas" and opcion and opcion.startswith("4."):
+                if not id_carrera or not id_trainer:
+                    st.warning("El nombre del Jockey y del Entrenador son obligatorios para esta consulta.")
+            elif not id_carrera and not (categoria_crud == "Inserción"):
+                st.warning("El parámetro o ID de búsqueda es obligatorio para proceder.")
+            
             with st.spinner("Consultando en Cassandra..."):
                 # ---------------------------------------------
                 # EJECUCIÓN DE CONSULTAS SIMPLES
                 # ---------------------------------------------
                 if categoria == "Simples" and opcion:
-                    if opcion.startswith("1."):output_resultado = ejecutar_consulta_y_capturar_output(verResultadoCarrera, session, id_carrera)
-                    elif opcion.startswith("2."):output_resultado = ejecutar_consulta_y_capturar_output(verGanadorCarrera, session, id_carrera)
-                    elif opcion.startswith("3."):output_resultado = ejecutar_consulta_y_capturar_output(verTopTresCarrera, session, id_carrera)
-                    elif opcion.startswith("4."):output_resultado = ejecutar_consulta_y_capturar_output(verHistorialCaballo, session, id_carrera)
-                    elif opcion.startswith("5."):output_resultado = ejecutar_consulta_y_capturar_output(verHistorialJockey, session, id_carrera)
+                    if opcion.startswith("1."): output_resultado = ejecutar_consulta_y_capturar_output(verResultadoCarrera, session, id_carrera)
+                    elif opcion.startswith("2."): output_resultado = ejecutar_consulta_y_capturar_output(verGanadorCarrera, session, id_carrera)
+                    elif opcion.startswith("3."): output_resultado = ejecutar_consulta_y_capturar_output(verTopTresCarrera, session, id_carrera)
+                    elif opcion.startswith("4."): output_resultado = ejecutar_consulta_y_capturar_output(verHistorialCaballo, session, id_carrera)
+                    elif opcion.startswith("5."): output_resultado = ejecutar_consulta_y_capturar_output(verHistorialJockey, session, id_carrera)
 
                 # ---------------------------------------------
                 # EJECUCIÓN DE CONSULTAS COMPLEJAS
                 # ---------------------------------------------
                 elif categoria == "Complejas" and opcion:
-                    if opcion.startswith("1."):output_resultado = ejecutar_consulta_y_capturar_output(verRendimientoCaballo, session, id_carrera)
-                    elif opcion.startswith("2."):output_resultado = ejecutar_consulta_y_capturar_output(verJockeyPorPosicionFinalDelCaballo, session, id_carrera)
-                    elif opcion.startswith("3."):output_resultado = ejecutar_consulta_y_capturar_output(verEntrenadorPorJockey, session, id_carrera)
-                    elif opcion.startswith("4."):output_resultado = ejecutar_consulta_y_capturar_output(verTiempoPromedioPorDupla, session, id_carrera, limite_filas)
-                    elif opcion.startswith("5."):output_resultado = ejecutar_consulta_y_capturar_output(verCaballos, session)
+                    if opcion.startswith("1."): output_resultado = ejecutar_consulta_y_capturar_output(verRendimientoCaballo, session, id_carrera)
+                    elif opcion.startswith("2."): output_resultado = ejecutar_consulta_y_capturar_output(verJockeyPorPosicionFinalDelCaballo, session, id_carrera)
+                    elif opcion.startswith("3."): output_resultado = ejecutar_consulta_y_capturar_output(verEntrenadorPorJockey, session, id_carrera)
+                    elif opcion.startswith("4."): output_resultado = ejecutar_consulta_y_capturar_output(verTiempoPromedioPorDupla, session, id_carrera, id_trainer)
+                    elif opcion.startswith("5."): output_resultado = ejecutar_consulta_y_capturar_output(verCaballos, session, id_carrera)
 
                 # ---------------------------------------------
                 # EJECUCIÓN DE OPERACIONES CRUD
@@ -246,36 +252,37 @@ def mostrar_cassandra(session):
                 elif categoria_crud == "Inserción" and opcion_crud:
                     nombre_operacion = opcion_crud
                     if opcion_crud.startswith("1."):
-                        if not horse_id or not horse_name:st.warning("El ID y Nombre del caballo son obligatorios para crear el registro.")
+                        if not horse_id or not horse_name: st.warning("El ID y Nombre del caballo son obligatorios para crear el registro.")
                         else:
                             output_resultado = ejecutar_consulta_y_capturar_output(crear_resultado_manual,session,id_carrera,finishing_position,horse_id,horse_number,horse_name,jockey,trainer,finish_time,finish_time_seconds)
 
                 elif categoria_crud == "Lectura" and opcion_crud:
                     nombre_operacion = opcion_crud
                     if opcion_crud.startswith("1."):
-                        if not horse_id:st.warning("El ID del caballo es obligatorio para buscar el registro.")
+                        if not horse_id: st.warning("El ID del caballo es obligatorio para buscar el registro.")
                         else:
                             output_resultado = ejecutar_consulta_y_capturar_output(leer_resultado_especifico,session,id_carrera,finishing_position,horse_id)
 
                 elif categoria_crud == "Actualización" and opcion_crud:
                     nombre_operacion = opcion_crud
                     if opcion_crud.startswith("1."):
-                        if not horse_id:st.warning("El ID del caballo es obligatorio para actualizar el registro.")
+                        if not horse_id: st.warning("El ID del caballo es obligatorio para actualizar el registro.")
                         else:
                             output_resultado = ejecutar_consulta_y_capturar_output(actualizar_tiempo_resultado,session,id_carrera,finishing_position,horse_id,finish_time,finish_time_seconds)
 
                 elif categoria_crud == "Borrado" and opcion_crud:
                     nombre_operacion = opcion_crud
                     if opcion_crud.startswith("1."):
-                        if not horse_id:st.warning("El ID del caballo es obligatorio para borrar el registro.")
-                        elif not confirmar_borrado:st.warning("Para borrar este registro, primero debe confirmar la operación.")
+                        if not horse_id: st.warning("El ID del caballo es obligatorio para borrar el registro.")
+                        elif not confirmar_borrado: st.warning("Para borrar este registro, primero debe confirmar la operación.")
                         else:
                             output_resultado = ejecutar_consulta_y_capturar_output(eliminar_resultado_especifico,session,id_carrera,finishing_position,horse_id)
+        
         # =========================================================
         # RENDERIZADO DEL RESULTADO
         # =========================================================
         if output_resultado:
-            # Determina el nombre de la operación ejecutada, contemplando tanto consultas como CRUD.
+            # Determina el nombre de la operación ejecutada
             if opcion is not None:
                 operacion_actual = opcion
             elif opcion_crud is not None:

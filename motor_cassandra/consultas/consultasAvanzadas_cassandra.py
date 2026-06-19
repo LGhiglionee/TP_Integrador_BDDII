@@ -57,7 +57,7 @@ def verTiempoPromedioPorDupla(cassandra_db, nombreJockey, nombreTrainer):
 
     print(f"\n--- Datos de la tabla tiempo_promedio_por_dupla (Dupla: {nombreJockey} / {nombreTrainer}) ---")
     for fila in resultados:
-        print(f"Jockey: {fila.jockey} | Trainer: {fila.trainer} | Promedio Tiempo: {fila.promedio_tiempo_final} | Time Seconds: {fila.finish_time_seconds}s")
+        print(f"Jockey: {fila.jockey} | Trainer: {fila.trainer} | Tiempo Promedio: {fila.promedio_tiempo_final} | Time Seconds: {fila.finish_time_seconds}s")
 
 def verCaballos(cassandra_db, idCaballo):
     filas = cassandra_db.execute("""
