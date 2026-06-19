@@ -1,22 +1,26 @@
+"""
+Módulo de ingesta de datos para Neo4j.
+Realiza la transformación de datos tabulares (CSV) a un modelo de grafos (nodos y relaciones),
+utilizando carga por lotes para optimizar la transaccionalidad y el rendimiento.
+"""
 import csv
 import os
 
-
 def ImportarDataset(driver, base_datos):
+    """
+    Función principal de ETL (Extract, Transform, Load).
+    Lee el archivo CSV, limpia los datos y orquesta la creación de la topología del grafo.
+    """
     try:
+        # Configuración de ruta y lectura de archivo
         ruta_script = os.path.dirname(os.path.abspath(__file__))
-
-        path = os.path.join(
-            ruta_script,
-            "..",
-            "datasets",
-            "race-result-horse.csv"
-        )
+        path = os.path.join(ruta_script,"..","datasets","race-result-horse.csv")
 
         with open(path, "r", encoding="UTF-8") as archivo:
             lector = csv.DictReader(archivo, delimiter=";")
             documentos = []
 
+            # Fase de transformación: Normalización y saneamiento de datos (etapa de limpieza)
             for fila in lector:
                 horse_id = limpiar_texto(fila.get("horse_id"))
                 horse_name = limpiar_texto(fila.get("horse_name"))
@@ -25,7 +29,7 @@ def ImportarDataset(driver, base_datos):
                 if not horse_id or not horse_name or not race_id:
                     continue
 
-                fila_limpia = {
+                fila_limpia = { # Estructura normalizada
                     "horse_id": horse_id,
                     "horse_name": horse_name,
                     "race_id": race_id,
@@ -56,13 +60,23 @@ def ImportarDataset(driver, base_datos):
             print("El archivo CSV parece estar vacío o no contiene filas válidas.")
             return
 
+        # Fase de carga (Load): Inserción masiva en Neo4j
         print(f"Comenzando inserción de {len(documentos)} registros en Neo4j...")
-
         tamaño_lote = 5000
 
         with driver.session(database=base_datos) as session:
             insertar_nodos_principales(session, documentos, tamaño_lote)
             insertar_relaciones(session, documentos, tamaño_lote)
+            
+            print("Calculando el total de entidades y relaciones importadas...")
+            resultado_entidades = session.run("MATCH (n) RETURN count(n) AS TotalEntidades").single()
+            resultado_relaciones = session.run("MATCH ()-[r]->() RETURN count(r) AS TotalRelaciones").single()
+
+            # Verificación post-ingesta (KPIs de carga)
+            if resultado_entidades:
+                print(f"Total de Entidades: {resultado_entidades['TotalEntidades']}")
+            if resultado_relaciones:
+                print(f"Total de Relaciones: {resultado_relaciones['TotalRelaciones']}")
 
         print("Importación completa en Neo4j.")
 
@@ -74,6 +88,10 @@ def ImportarDataset(driver, base_datos):
 
 
 def insertar_nodos_principales(session, documentos, tamaño_lote):
+    """
+    Crea la arquitectura base del grafo: Nodos (Caballo, Carrera, Entrenador, Jockey).
+    Usa 'MERGE' para asegurar que, si un nodo ya existe, no se duplique (idempotencia).
+    """
     query = """
         UNWIND $batch AS fila
 
@@ -88,31 +106,31 @@ def insertar_nodos_principales(session, documentos, tamaño_lote):
         MERGE (j:Jockey {nombre: fila.jockey})
     """
 
-    total_procesados = 0
     total_documentos = len(documentos)
 
     for i in range(0, total_documentos, tamaño_lote):
         lote_actual = documentos[i:i + tamaño_lote]
         session.run(query, batch=lote_actual)
 
-        total_procesados += len(lote_actual)
-        print(f"Nodos principales: {total_procesados} / {total_documentos} procesados...")
-
 
 def insertar_relaciones(session, documentos, tamaño_lote):
+    """
+    Crea la semántica del grafo: Define las aristas (relaciones) que conectan
+    los nodos, como [:HIJO_DE], [:CORRIO], [:ENTRENADO_POR], etc.
+    """
     query = """
         UNWIND $batch AS fila
-
+        
+        // Re-localización de nodos (se asegura de encontrar los existentes)
         MERGE (c:Caballo {id: fila.horse_id})
         SET c.nombre = fila.horse_name,
             c.numero = fila.horse_number
 
         MERGE (race:Carrera {id: fila.race_id})
-
         MERGE (e:Entrenador {nombre: fila.trainer})
-
         MERGE (j:Jockey {nombre: fila.jockey})
 
+        // Creación de relaciones direccionales y asignación de propiedades (tiempo, posición)
         MERGE (c)-[r:CORRIO]->(race)
         SET r.posicion = fila.finishing_position,
             r.peso_actual = fila.actual_weight,
@@ -123,7 +141,8 @@ def insertar_relaciones(session, documentos, tamaño_lote):
             r.posicion_3 = fila.running_position_3,
             r.tiempo = fila.finish_time,
             r.tiempo_segundos = fila.finish_time_seconds
-
+        
+        // Relaciones genealógicas (modelo de linaje)
         MERGE (p:Caballo {nombre: fila.father})
         MERGE (c)-[:HIJO_DE]->(p)
 
@@ -132,21 +151,18 @@ def insertar_relaciones(session, documentos, tamaño_lote):
 
         MERGE (ab:Caballo {nombre: fila.gfather})
         MERGE (c)-[:NIETO_DE]->(ab)
-
+        
+        // Relaciones de desempeño profesional
         MERGE (c)-[:ENTRENADO_POR]->(e)
 
         MERGE (c)-[:MONTADO_POR]->(j)
     """
 
-    total_procesados = 0
     total_documentos = len(documentos)
 
     for i in range(0, total_documentos, tamaño_lote):
         lote_actual = documentos[i:i + tamaño_lote]
         session.run(query, batch=lote_actual)
-
-        total_procesados += len(lote_actual)
-        print(f"Relaciones: {total_procesados} / {total_documentos} procesadas...")
 
 
 def limpiar_texto(valor):

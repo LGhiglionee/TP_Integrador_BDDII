@@ -1,4 +1,13 @@
+"""
+Módulo de consultas analíticas para Neo4j (Cypher).
+Utiliza el motor de grafos para navegar linaje, patrones de entrenamiento y
+comportamiento genealógico mediante recorridos profundos (depth-first traversal).
+"""
 def buscar_caballo_nombre(session, nombre):
+    """
+    Consulta básica: Navega la relación direccional [:CORRIO] entre
+    nodos Caballo y Carrera.
+    """
     try:
         nombre = nombre.upper().strip()
 
@@ -25,6 +34,10 @@ def buscar_caballo_nombre(session, nombre):
         print(f"Error en la consulta avanzada: {e}")
 
 def recomendacion_entrenador_matchmaking(session, nombre):
+    """
+    Análisis de Linaje: Utiliza recorridos multihop para encontrar hermanos (mismo progenitor)
+    y evaluar la eficiencia del entrenador ([:ENTRENADO_POR]) en ese grupo familiar.
+    """
     try:
         nombre = nombre.upper().strip()
 
@@ -66,6 +79,10 @@ def recomendacion_entrenador_matchmaking(session, nombre):
         print(f"Error en la consulta avanzada: {e}")
 
 def caballos_similares_diamante(session, nombre):
+    """
+    Patrón de Diamante: Identifica sub-grafos donde dos caballos comparten
+    un ancestro común (abuelo) y un mismo entrenador.
+    """
     try:
         nombre = nombre.upper().strip()
 
@@ -110,6 +127,10 @@ def caballos_similares_diamante(session, nombre):
         print(f"Error en la consulta avanzada: {e}")
 
 def recomendacion_apuestas_linaje(session, nombre):
+    """
+    Análisis estadístico sobre grafos: Calcula el éxito (victorias) de un linaje
+    directo para predecir probabilidades de nuevos ejemplares.
+    """
     try:
         nombre = nombre.upper().strip()
 
@@ -165,6 +186,10 @@ def recomendacion_apuestas_linaje(session, nombre):
         print(f"Error en la consulta avanzada: {e}")
 
 def linea_sangre_caballo(session, nombre):
+    """
+    Consulta de profundidad: Utiliza OPTIONAL MATCH para extraer una ficha
+    genealógica completa, navegando nodos de padres y abuelos.
+    """
     try:
         nombre = nombre.upper().strip()
 
@@ -211,6 +236,10 @@ def linea_sangre_caballo(session, nombre):
         print(f"Error en la consulta: {e}")
 
 def ranking_entrenadores_por_linaje(session, nombre_padre):
+    """
+    Agregación sobre relaciones: Calcula promedios matemáticos (avg)
+    sobre las propiedades de las aristas (r.posicion) agrupadas por un nodo entidad (Entrenador).
+    """
     try:
         nombre_padre = nombre_padre.upper().strip()
 

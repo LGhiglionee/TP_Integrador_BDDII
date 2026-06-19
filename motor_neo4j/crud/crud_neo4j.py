@@ -1,19 +1,25 @@
+"""
+Módulo de operaciones CRUD para Neo4j.
+Gestiona la creación, lectura y borrado de nodos y relaciones, asegurando que
+el grafo mantenga su coherencia estructural mediante el uso de MERGE y DETACH DELETE.
+"""
 def buscar_participacion_caballo(session, horse_id, race_id):
+    """
+    Lee un patrón específico en el grafo: la existencia de una relación
+    [:CORRIO] entre un nodo Caballo y un nodo Carrera.
+    """
     query = """
     MATCH (c:Caballo {id: $horse_id})-[r:CORRIO]->(race:Carrera {id: $race_id})
     RETURN c.nombre AS nombre, race.id AS carrera_id
     """
 
-    resultado = session.run(
-        query,
-        horse_id=horse_id,
-        race_id=race_id
-    ).single()
-
-    return resultado
-
+    return session.run(query, horse_id=horse_id, race_id=race_id).single()
 
 def insertar_registro_carrera(session, datos):
+    """
+    Operación 'Upsert' (Update o Insert): Crea o actualiza nodos y relaciones
+    de forma atómica. Si el caballo, entrenador o jockey no existen, los crea.
+    """
     datos_limpios = preparar_datos(datos)
 
     query = """
@@ -22,11 +28,10 @@ def insertar_registro_carrera(session, datos):
         c.numero = $horse_number
 
     MERGE (race:Carrera {id: $race_id})
-
     MERGE (e:Entrenador {nombre: $trainer})
-
     MERGE (j:Jockey {nombre: $jockey})
 
+    // Creación de la arista (relación) principal con sus propiedades de métrica
     MERGE (c)-[r:CORRIO]->(race)
     SET r.posicion = $finishing_position,
         r.peso_actual = $actual_weight,
@@ -37,7 +42,8 @@ def insertar_registro_carrera(session, datos):
         r.posicion_3 = $running_position_3,
         r.tiempo = $finish_time,
         r.tiempo_segundos = $finish_time_seconds
-
+    
+    // Creación de relaciones de linaje (genealogía)
     MERGE (p:Caballo {nombre: $father})
     MERGE (c)-[:HIJO_DE]->(p)
 
@@ -54,12 +60,13 @@ def insertar_registro_carrera(session, datos):
     RETURN c.id AS horse_id, c.nombre AS horse_name, race.id AS race_id
     """
 
-    resultado = session.run(query, **datos_limpios).single()
-
-    return resultado
-
+    return session.run(query, **datos_limpios).single()
 
 def borrar_caballo_carrera_especifica(session, horse_id, race_id):
+    """
+    Borrado específico: Elimina únicamente la arista [:CORRIO] entre un caballo
+    y una carrera, preservando la existencia de ambos nodos.
+    """
     query = """
     MATCH (c:Caballo {id: $horse_id})-[r:CORRIO]->(race:Carrera {id: $race_id})
     WITH c, race, r, c.nombre AS nombre_caballo
@@ -67,27 +74,15 @@ def borrar_caballo_carrera_especifica(session, horse_id, race_id):
     RETURN count(r) AS deleted_count, nombre_caballo AS nombre, race.id AS carrera_id
     """
 
-    resultado = session.run(
-        query,
-        horse_id=horse_id,
-        race_id=race_id
-    ).single()
-
-    if resultado is None:
-        return {
-            "deleted_count": 0,
-            "nombre": None,
-            "carrera_id": race_id
-        }
-
-    return {
-        "deleted_count": resultado["deleted_count"],
-        "nombre": resultado["nombre"],
-        "carrera_id": resultado["carrera_id"]
-    }
+    return session.run(query, horse_id=horse_id, race_id=race_id).single()
 
 
 def borrar_caballo_completo(session, horse_id):
+    """
+    Borrado en cascada: Usa 'DETACH DELETE' para eliminar el nodo Caballo
+    junto con todas sus relaciones asociadas (si no se usa DETACH,
+    Neo4j arrojaría error al intentar borrar nodos con relaciones).
+    """
     query = """
     MATCH (c:Caballo {id: $horse_id})
     WITH c, c.nombre AS nombre_caballo
@@ -95,24 +90,13 @@ def borrar_caballo_completo(session, horse_id):
     RETURN count(c) AS deleted_count, nombre_caballo AS nombre
     """
 
-    resultado = session.run(
-        query,
-        horse_id=horse_id
-    ).single()
-
-    if resultado is None:
-        return {
-            "deleted_count": 0,
-            "nombre": None
-        }
-
-    return {
-        "deleted_count": resultado["deleted_count"],
-        "nombre": resultado["nombre"]
-    }
-
+    return session.run(query, horse_id=horse_id).single()
 
 def preparar_datos(datos):
+    """
+    Capa de abstracción: Normaliza los inputs del usuario (limpieza de espacios,
+    tipado de números) antes de enviarlos al motor.
+    """
     return {
         "horse_id": limpiar_texto(datos.get("horse_id")),
         "horse_name": limpiar_texto(datos.get("horse_name")),
