@@ -57,37 +57,58 @@ def leer_resultado_especifico(session, race_id, finishing_position, horse_id):
 
 def actualizar_tiempo_resultado(session, race_id, finishing_position, horse_id, nuevo_time):
     """
-    Operación UPDATE: Mutación de atributos no-clave
-    En Cassandra, UPDATE e INSERT comparten la misma lógica interna. Si la clave primaria
-    especificada en el WHERE ya existe, el motor pisa los campos indicados guardando un nuevo timestamp.
-    Si la clave no existiera, crearía una nueva fila de forma automática sin lanzar errores.
-    """
-    query = """
-        UPDATE caballos_por_carrera
-        SET finish_time = ?
-        WHERE race_id = ? AND finishing_position = ?
+    Operación UPDATE con validación a nivel de aplicación (Read-Before-Write).
+    Como horse_id no es Clave Primaria, Cassandra no permite filtrarlo en el WHERE de un UPDATE.
+    Primero validamos que el horse_id coincida, y luego ejecutamos la mutación.
     """
     try:
-        preparado = session.prepare(query)
+        query_verificar = "SELECT horse_id FROM caballos_por_carrera WHERE race_id = %s AND finishing_position = %s"
+        resultado = session.execute(query_verificar, (str(race_id), int(finishing_position))).one()
+
+        if not resultado:
+            print(f"Error: No se encontró la carrera {race_id} con la posición {finishing_position}.")
+            return
+        
+        if resultado.horse_id != str(horse_id):
+            print(f"Error de seguridad: El caballo en la posición {finishing_position} es '{resultado.horse_id}', no '{horse_id}'. Actualización bloqueada.")
+            return
+        
+        query_act = """
+            UPDATE caballos_por_carrera
+            SET finish_time = ?
+            WHERE race_id = ? AND finishing_position = ?
+        """
+        preparado = session.prepare(query_act)
         session.execute(preparado, [str(nuevo_time), str(race_id), int(finishing_position)])
-        print(f"Tiempo actualizado con éxito para la carrera {race_id}.")
+        print(f"Tiempo actualizado con éxito para el caballo {horse_id} en la carrera {race_id}.")
+
     except Exception as e:
         print(f"Error en CRUD (Actualizar): {e}")
 
+
 def eliminar_resultado_especifico(session, race_id, finishing_position, horse_id):
     """
-    Operación DELETE: Eliminación lógica mediante Tombstones.
-    Debido a que los archivos SSTables en disco son inmutables, Cassandra no sobreescribe ni borra
-    físicamente el registro en caliente. En su lugar, esta operación escribe un marcador lógico (Tombstone)
-    que oculta el registro en las lecturas. El dato se purgará definitivamente del disco durante el proceso
-    posterior de compactación de archivos.
-    """
-    query = """
-        DELETE FROM caballos_por_carrera
-        WHERE race_id = %s AND finishing_position = %s
+    Operación DELETE con validación a nivel de aplicación (Read-Before-Write).
+    Misma lógica que el UPDATE: validamos el dato no-clave antes de generar el Tombstone.
     """
     try:
-        session.execute(query, (str(race_id), int(finishing_position)))
-        print(f"CRUD: Registro eliminado correctamente.")
+        query_verificar = "SELECT horse_id FROM caballos_por_carrera WHERE race_id = %s AND finishing_position = %s"
+        resultado = session.execute(query_verificar, (str(race_id), int(finishing_position))).one()
+
+        if not resultado:
+            print(f"Error: No se encontró la carrera {race_id} con la posición {finishing_position}.")
+            return
+        
+        if resultado.horse_id != str(horse_id):
+            print(f"Error de seguridad: El caballo en la posición {finishing_position} es '{resultado.horse_id}', no '{horse_id}'. Borrado bloqueado.")
+            return
+        
+        query_borrar = """
+            DELETE FROM caballos_por_carrera
+            WHERE race_id = %s AND finishing_position = %s
+        """
+        session.execute(query_borrar, (str(race_id), int(finishing_position)))
+        print(f"CRUD: Registro del caballo {horse_id} eliminado correctamente.")
+
     except Exception as e:
         print(f"Error en CRUD (Eliminar): {e}")
