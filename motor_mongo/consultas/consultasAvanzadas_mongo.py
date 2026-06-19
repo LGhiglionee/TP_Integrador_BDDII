@@ -3,11 +3,10 @@ Módulo de consultas avanzadas para MongoDB.
 Este archivo contiene la lógica de negocio aplicada sobre los datos de carreras.
 Utiliza operadores de MongoDB como $regex, $lt y métodos de agregación (sort, limit, distinct).
 """
-
 def promedio_tiempo_todos(collection):
     """
     Calcula el promedio aritmético de tiempos.
-    Primero proyecta solo el campo necesario para reducir el uso de memoria (I/O).
+    Primero proyecta solo el campo necesario para reducir el uso de memoria.
     """
     try:
         query = {}
@@ -18,7 +17,6 @@ def promedio_tiempo_todos(collection):
         if not resultados:
             print("No se encontraron resultados para poder calcular el promedio.")
         else:
-            # Lógica de cálculo en Python tras filtrar los nulos
             suma_tiempos = 0
             cantidad_caballos = 0
             for caballo in resultados:
@@ -37,7 +35,7 @@ def promedio_tiempo_todos(collection):
 
 def promedio_tiempo_entrenador(collection):
     """
-    Usa el operador $regex con opciones 'i' (case-insensitive) para buscar
+    Usa el operador $regex con opciones 'i' para buscar
     patrones flexibles en el nombre del entrenador.
     """
     try:
@@ -49,7 +47,6 @@ def promedio_tiempo_entrenador(collection):
         if not resultados:
             print("No se encontraron resultados de caballos entrenados por P F YIU.")
         else:
-            # Similar lógica de promedio que la función anterior
             suma_tiempos = 0
             cantidad_caballos = 0
         

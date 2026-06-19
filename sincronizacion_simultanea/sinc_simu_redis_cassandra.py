@@ -2,7 +2,6 @@
 Módulo de sincronización interestructural optimizado.
 Vuelca los resultados calculados en tiempo real en Redis hacia el almacenamiento físico de Cassandra.
 """
-
 def finalizarCarreraSimultanea(redis_db, cassandra_session, idCarrera):
     """
     Sincronización simultánea autónoma.

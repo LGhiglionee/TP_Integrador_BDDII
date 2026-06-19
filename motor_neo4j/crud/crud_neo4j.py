@@ -12,13 +12,12 @@ def buscar_participacion_caballo(session, horse_id, race_id):
     MATCH (c:Caballo {id: $horse_id})-[r:CORRIO]->(race:Carrera {id: $race_id})
     RETURN c.nombre AS nombre, race.id AS carrera_id
     """
-
     return session.run(query, horse_id=horse_id, race_id=race_id).single()
 
 def insertar_registro_carrera(session, datos):
     """
-    Operación 'Upsert' (Update o Insert): Crea o actualiza nodos y relaciones
-    de forma atómica. Si el caballo, entrenador o jockey no existen, los crea.
+    Operación 'Upsert' (Update o Insert):
+    Crea o actualiza nodos y relaciones de forma atómica. Si el caballo, entrenador o jockey no existen, los crea.
     """
     datos_limpios = preparar_datos(datos)
 
@@ -54,7 +53,6 @@ def insertar_registro_carrera(session, datos):
     MERGE (c)-[:NIETO_DE]->(ab)
 
     MERGE (c)-[:ENTRENADO_POR]->(e)
-
     MERGE (c)-[:MONTADO_POR]->(j)
 
     RETURN c.id AS horse_id, c.nombre AS horse_name, race.id AS race_id
@@ -75,7 +73,6 @@ def borrar_caballo_carrera_especifica(session, horse_id, race_id):
     """
 
     return session.run(query, horse_id=horse_id, race_id=race_id).single()
-
 
 def borrar_caballo_completo(session, horse_id):
     """
@@ -126,7 +123,6 @@ def preparar_datos(datos):
 def limpiar_texto(valor):
     if valor is None:
         return None
-
     valor = str(valor).strip()
 
     if valor == "":
@@ -134,23 +130,19 @@ def limpiar_texto(valor):
 
     return valor
 
-
 def convertir_int(valor):
     try:
         if valor is None or str(valor).strip() == "":
             return None
-
         return int(valor)
 
     except:
         return None
 
-
 def convertir_float(valor):
     try:
         if valor is None or str(valor).strip() == "":
             return None
-
         return float(str(valor).replace(",", "."))
 
     except:

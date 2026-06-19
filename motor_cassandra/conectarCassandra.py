@@ -2,7 +2,7 @@
 Módulo de infraestructura, conexión y orquestación para Apache Cassandra.
 Gestiona el pool de conexiones nativas mediante el protocolo binario de Cassandra,
 automatiza la provisión de topologías de replicación (Keyspaces) y orquesta el
-proceso de bootstrapping o carga perezosa (Lazy Loading) del dataset histórico.
+proceso de bootstrapping o del dataset histórico.
 """
 from cassandra.cluster import Cluster
 
@@ -22,7 +22,7 @@ def ConectarCassandra():
         cluster = Cluster(["127.0.0.1"])
         session = cluster.connect()
 
-        # Creación imperativa del Keyspace (Equivalente al Schema en entornos SQL).
+        # Creación imperativa del Keyspace
         # SimpleStrategy: Ideal para despliegues en un único centro de datos.
         # replication_factor: 1 define cuántas copias del dato vivirán en el anillo.
         session.execute("""
@@ -60,9 +60,6 @@ def contar_registros(session, tabla):
     único devuelto por el nodo coordinador que consolidó el conteo del anillo.
     """
     try:
-        # Nota técnica: En entornos masivos distribuidos reales de producción,
-        # SELECT COUNT(*) causa un impacto alto de I/O en disco (SSTables); para este alcance
-        # local, actúa como el validador perfecto de consistencia inicial.
         resultado = session.execute(f"SELECT COUNT(*) FROM {tabla}")
         fila = resultado.one() # Recupera la única tupla de respuesta con el conteo
         return fila[0]

@@ -1,7 +1,7 @@
 """
 Módulo de operaciones CRUD (Create, Read, Update, Delete) para Apache Cassandra.
 Implementa mutaciones atómicas y lecturas directas por clave primaria completa,
-optimizando el rendimiento a través de sentencias precompiladas (Prepared Statements)
+optimizando el rendimiento a través de sentencias precompiladas
 y minimizando la latencia de coordinación en el anillo distribuido.
 """
 def crear_resultado_manual(session, race_id, finishing_position, horse_id, horse_number, horse_name, jockey, trainer, finish_time, finish_time_seconds):
@@ -23,7 +23,7 @@ def crear_resultado_manual(session, race_id, finishing_position, horse_id, horse
             int(horse_number), str(horse_name), str(jockey),
             str(trainer), str(finish_time), float(finish_time_seconds)
         ])
-        print(f"CRUD: Resultado creado para el caballo {horse_name} en la carrera {race_id}.")
+        print(f"Resultado creado para el caballo {horse_name} en la carrera {race_id}.")
     except Exception as e:
         print(f"Error en CRUD (Crear): {e}")
 
@@ -70,7 +70,7 @@ def actualizar_tiempo_resultado(session, race_id, finishing_position, horse_id, 
     try:
         preparado = session.prepare(query)
         session.execute(preparado, [str(nuevo_time), float(nuevo_time_seconds), str(race_id), int(finishing_position), str(horse_id)])
-        print(f"CRUD: Tiempo actualizado con éxito para la carrera {race_id}.")
+        print(f"Tiempo actualizado con éxito para la carrera {race_id}.")
     except Exception as e:
         print(f"Error en CRUD (Actualizar): {e}")
 

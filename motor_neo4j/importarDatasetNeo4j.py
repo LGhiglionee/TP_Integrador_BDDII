@@ -20,7 +20,7 @@ def ImportarDataset(driver, base_datos):
             lector = csv.DictReader(archivo, delimiter=";")
             documentos = []
 
-            # Fase de transformación: Normalización y saneamiento de datos (etapa de limpieza)
+            # Fase de transformación: Normalización y saneamiento de datos
             for fila in lector:
                 horse_id = limpiar_texto(fila.get("horse_id"))
                 horse_name = limpiar_texto(fila.get("horse_name"))
@@ -90,7 +90,7 @@ def ImportarDataset(driver, base_datos):
 def insertar_nodos_principales(session, documentos, tamaño_lote):
     """
     Crea la arquitectura base del grafo: Nodos (Caballo, Carrera, Entrenador, Jockey).
-    Usa 'MERGE' para asegurar que, si un nodo ya existe, no se duplique (idempotencia).
+    Usa 'MERGE' para asegurar que, si un nodo ya existe, no se duplique.
     """
     query = """
         UNWIND $batch AS fila
@@ -100,9 +100,7 @@ def insertar_nodos_principales(session, documentos, tamaño_lote):
             c.numero = fila.horse_number
 
         MERGE (race:Carrera {id: fila.race_id})
-
         MERGE (e:Entrenador {nombre: fila.trainer})
-
         MERGE (j:Jockey {nombre: fila.jockey})
     """
 
@@ -164,11 +162,9 @@ def insertar_relaciones(session, documentos, tamaño_lote):
         lote_actual = documentos[i:i + tamaño_lote]
         session.run(query, batch=lote_actual)
 
-
 def limpiar_texto(valor):
     if valor is None:
         return None
-
     valor = str(valor).strip()
 
     if valor == "":
@@ -176,12 +172,10 @@ def limpiar_texto(valor):
 
     return valor
 
-
 def convertir_int(valor):
     try:
         if valor is None or str(valor).strip() == "":
             return None
-
         return int(valor)
 
     except:
@@ -192,7 +186,6 @@ def convertir_float(valor):
     try:
         if valor is None or str(valor).strip() == "":
             return None
-
         return float(str(valor).replace(",", "."))
 
     except:

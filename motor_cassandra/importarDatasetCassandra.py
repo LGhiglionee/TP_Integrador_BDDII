@@ -13,7 +13,7 @@ import os
 def convertir_int(valor):
     """
     Sanea cadenas de texto a enteros. Previene excepciones de tipo en el engine
-    de Cassandra al procesar números representados como floats con punto flotante ("12.0").
+    de Cassandra al procesar números representados como floats con punto flotante.
     """
     try:
         return int(float(valor)) if valor not in ("", None) else None
@@ -80,7 +80,6 @@ def ImportarDataset(session):
         if not filas:
             print("El archivo CSV está vacío.")
             return
-
         print(f"Iniciando importación de {len(filas)} filas a las 7 tablas...")
 
         # Invocación estructurada a los pipelines individuales de carga desnormalizada
@@ -199,9 +198,8 @@ def importar_entrenador_por_jockey(session, filas):
 
 def importar_tiempo_promedio_por_dupla(session, filas):
     """
-    Dado que las bases de datos masivas distribuidas sufren penalizaciones críticas al calcular
-    promedios globales en tiempo de consulta, este pipeline utiliza diccionarios de Python
-    para calcular los promedios en la RAM de la aplicación, inyectando únicamente el valor consolidado
+    Utiliza diccionarios de Python para calcular los promedios en la RAM de la aplicación,
+    inyectando únicamente el valor consolidado
     en la Clave de Partición Compuesta ((jockey, trainer)).
     """
     duplas = {}

@@ -1,8 +1,8 @@
 """
 Módulo de consultas analíticas e históricas para Apache Cassandra.
-Implementa el acceso a datos bajo la metodología de Diseño Orientado a Consultas
-, ejecutando búsquedas directas sobre claves de partición
-para garantizar lecturas optimizadas de tiempo constante O(1).
+Implementa el acceso a datos bajo la metodología de Diseño Orientado a Consultas,
+ejecutando búsquedas directas sobre claves de partición
+para garantizar lecturas optimizadas de tiempo constante.
 """
 def verRendimientoCaballo(cassandra_db, idCaballo):
     """
@@ -85,9 +85,8 @@ def verTiempoPromedioPorDupla(cassandra_db, nombreJockey, nombreTrainer):
 
 def verCaballos(cassandra_db, idCaballo):
     """
-    Escaneo de Tabla Dispersa (Sparse Table).
-    Recupera el conjunto global de entidades. Nota de rendimiento: En entornos de producción masivos,
-    un SELECT sin WHERE (Full Cluster Scan) debe ser evitado o controlado mediante paginación.
+    Escaneo de Tabla Dispersa.
+    Recupera el conjunto global de entidades.
     """
     filas = cassandra_db.execute("""
         SELECT * FROM caballos

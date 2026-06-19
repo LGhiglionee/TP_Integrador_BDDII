@@ -29,7 +29,7 @@ def ConectarNeo4j(uri, user, password, base_datos="neo4j"):
             record = resultado.single()
             total_nodos = record["total"] if record else 0
 
-        # Bootstrapping del sistema: carga los datos si el grafo no tiene entidades
+        # Carga los datos si el grafo no tiene entidades
         if total_nodos == 0:
             print("Base de datos Neo4j vacía. Iniciando importación...")
             ImportarDataset(driver, base_datos)

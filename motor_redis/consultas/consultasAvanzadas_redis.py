@@ -1,7 +1,7 @@
 """
 Módulo de lógica de simulación y gestión de estado en tiempo real para Redis.
-Utiliza estructuras de datos avanzadas como Sorted Sets (para rankings) y Hashes
-(para estados de carrera), permitiendo una latencia mínima en la simulación.
+Utiliza estructuras de datos avanzadas como Sorted Sets y Hashes,
+permitiendo una latencia mínima en la simulación.
 """
 import time
 import random
@@ -43,7 +43,6 @@ def simularCarrera(redis_db, idCarrera):
         return
 
     participantes = _normalizar_lista(redis_db.smembers(participantes_key))
-
     if not participantes:
         print("No hay participantes para simular la carrera.")
         return
@@ -60,7 +59,6 @@ def simularCarrera(redis_db, idCarrera):
 
             caballo_key = f"carrera:{idCarrera}:caballo:{horse_id}"
             caballo = _normalizar_hash(redis_db.hgetall(caballo_key))
-
             nombre = caballo.get("horse_name", horse_id)
 
             print(f"{nombre} avanzó {avance} puntos")
@@ -68,7 +66,6 @@ def simularCarrera(redis_db, idCarrera):
         time.sleep(1)
 
     print("\nSimulación finalizada.")
-
 
 def verRanking(redis_db, idCarrera):
     """
@@ -88,17 +85,14 @@ def verRanking(redis_db, idCarrera):
     print(f"\nRanking de la carrera {idCarrera}:")
 
     posicion = 1
-
     for horse_id, puntaje in ranking:
         horse_id = _normalizar_valor(horse_id)
 
         caballo_key = f"carrera:{idCarrera}:caballo:{horse_id}"
         caballo = _normalizar_hash(redis_db.hgetall(caballo_key))
-
         nombre = caballo.get("horse_name", horse_id)
 
         print(f"{posicion}. {nombre} - {int(puntaje)} puntos")
-
         posicion += 1
 
 
@@ -106,7 +100,7 @@ def obtenerGanador(redis_db, idCarrera):
     """
     Identifica al ganador de la carrera mediante un acceso directo al índice superior
     del Sorted Set. Es una operación de tiempo constante para la recuperación del
-    líder (el elemento con mayor puntaje).
+    líder.
     """
     idCarrera = str(idCarrera).strip()
 
@@ -126,7 +120,6 @@ def obtenerGanador(redis_db, idCarrera):
     # HGETALL recupera todos los campos del caballo ganador como un hash/diccionario
     caballo_key = f"carrera:{idCarrera}:caballo:{horse_id}"
     caballo = _normalizar_hash(redis_db.hgetall(caballo_key))
-
     nombre = caballo.get("horse_name", horse_id)
 
     print(f"Ganador: {nombre} con {int(puntaje)} puntos")

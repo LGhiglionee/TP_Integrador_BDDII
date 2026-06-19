@@ -29,7 +29,6 @@ def verGanadorCarrera(cassandra_db, idCarrera):
     Filtra por la Partition Key ('race_id') y la Clustering Key ('finishing_position').
     Al estar indexada y ordenada físicamente en disco de forma ascendente, esta búsqueda
     no escanea la partición, sino que accede directamente al primer registro de la SSTable.
-    El método .one() evita el procesamiento de colecciones en memoria de Python.
     """
     filas = cassandra_db.execute("""
         SELECT * FROM caballos_por_carrera WHERE race_id = %s AND finishing_position = 1
@@ -45,7 +44,7 @@ def verGanadorCarrera(cassandra_db, idCarrera):
 
 def verTopTresCarrera(cassandra_db, idCarrera):
     """
-    Acotación nativa del flujo de datos en disco (Early Termination).
+    Acotación nativa del flujo de datos en disco.
     Aprovecha la ordenación por clúster nativa de 'caballos_por_carrera'. Al aplicar
     la directiva 'LIMIT 3', Cassandra interrumpe la lectura secuencial en la SSTable
     apenas procesa los primeros tres registros, minimizando el I/O de disco y el tráfico de red.
@@ -83,7 +82,7 @@ def verHistorialCaballo(cassandra_db, idCaballo):
 
 def verHistorialJockey(cassandra_db, nombreJockey):
     """
-    Recuperación de perfiles profesionales por clave de fila (Row Key).
+    Recuperación de perfiles profesionales por clave de fila.
     Mapea el patrón de acceso sobre la estructura desnormalizada 'entrenador_por_jockey'.
     Resuelve la consulta de manera local en el nodo réplica correspondiente al hash
     del nombre del jockey provisto.

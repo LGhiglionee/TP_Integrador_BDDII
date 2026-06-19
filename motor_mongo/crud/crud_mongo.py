@@ -3,7 +3,6 @@ Módulo de operaciones CRUD para MongoDB.
 Gestiona el ciclo de vida de los documentos mediante el driver PyMongo,
 asegurando la integridad de los datos en la colección principal.
 """
-
 def insertar_caballo(collection, nuevo_doc):
     """
     Inserta un nuevo documento en la colección.

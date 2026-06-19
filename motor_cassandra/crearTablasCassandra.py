@@ -41,18 +41,14 @@ def crearTablaCaballosPorCarreras(cassandra_db):
 
 def crearTablaCaballos(cassandra_db):
     """
-    Tabla estática de entidades (Sparse Lookup Table).
+    Tabla estática de entidades.
     - Partition Key: horse_id (distribución uniforme por Hashing en el clúster).
     Permite búsquedas puntuales del perfil del caballo con complejidad O(1).
     """
     cassandra_db.execute("""
         CREATE TABLE IF NOT EXISTS caballos (
-            horse_id text,
-            horse_number int,
-            horse_name text,
-            declared_horse_weight int,
-            PRIMARY KEY (horse_id)
-        ) 
+            horse_id text,horse_number int,horse_name text,declared_horse_weight int,PRIMARY KEY (horse_id)
+            ) 
     """)
 
 def crearTablaRendimientoCaballo(cassandra_db):
@@ -63,18 +59,13 @@ def crearTablaRendimientoCaballo(cassandra_db):
     """
     cassandra_db.execute("""
         CREATE TABLE IF NOT EXISTS rendimiento_caballo (
-           horse_id text,
-           horse_name text,
-           carreras_corridas int,
-           victorias int,
-           promedio_posicion double,
-           PRIMARY KEY (horse_id)
-        ) 
+           horse_id text,horse_name text,carreras_corridas int,victorias int,promedio_posicion double,PRIMARY KEY (horse_id)
+            ) 
     """)
 
 def crearTablaCarrerasPorCaballos(cassandra_db):
     """
-    Modelado de Serie Temporal (Time-Series Variant).
+    Modelado de Serie Temporal.
     Permite consultar la historia cronológica de un caballo de forma óptima.
     - Partition Key: horse_id
     - Clustering Key: race_id (mantiene el histórico ordenado).
@@ -128,8 +119,8 @@ def crearTablaEntrenadorPorJockey(cassandra_db):
 
 def crearTablaTiempoPromedioPorDupla(cassandra_db):
     """
-    Este es el diseño más avanzado del Keyspace. Al encerrar entre paréntesis ((jockey, trainer)),
-    el motor calcula el hash combinando AMBOS strings. Los datos de la dupla se guardan juntos
+    Calcula el hash combinando AMBOS strings (jockey y trainer).
+    Los datos de la dupla se guardan juntos
     y se ordenan en el disco local mediante la Clustering Key 'promedio_tiempo_final'.
     """
     cassandra_db.execute("""

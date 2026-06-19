@@ -16,7 +16,6 @@ def listar_todos_entrenadores(session):
         ORDER BY entrenador ASC
         """
         resultados = list(session.run(query))
-        
         if not resultados:
             print("No se encontraron entrenadores registrados.")
         else:
@@ -42,7 +41,6 @@ def caballos_ganadores(session):
         """
 
         resultados = list(session.run(query))
-        
         if not resultados:
             print("No se encontraron caballos ganadores.")
         else:
@@ -65,7 +63,6 @@ def cantidad_total_caballos(session):
         """
 
         resultados = list(session.run(query))
-        
         if not resultados:
             print("No se pudieron contar el total de caballos.")
         else:
@@ -90,7 +87,6 @@ def entrenadores_letra_p(session):
         """
 
         resultados = list(session.run(query))
-        
         if not resultados:
             print("No se encontraron entrenadores que comiencen con la letra P.")
         else:

@@ -22,7 +22,6 @@ def _normalizar_lista(valores):
 
 def _obtener_estado_carrera(redis_db, idCarrera):
     carrera_key = f"carrera:{idCarrera}:info"
-
     if not redis_db.exists(carrera_key):
         return None
 
@@ -67,7 +66,6 @@ def crearApuestaManual(redis_db, idCarrera, horse_id, monto):
         return
 
     participantes = _normalizar_lista(redis_db.smembers(participantes_key))
-
     if not participantes:
         print(f"No hay participantes cargados para la carrera {idCarrera}.")
         return
@@ -97,7 +95,6 @@ def crearApuestaManual(redis_db, idCarrera, horse_id, monto):
     print(f"Caballo apostado: {horse_id}")
     print(f"Monto: ${monto}")
 
-
 # =========================
 # READ
 # =========================
@@ -108,7 +105,6 @@ def buscarApuesta(redis_db, idCarrera, apuesta_id):
     """
     idCarrera = str(idCarrera).strip()
     apuesta_id = str(apuesta_id).strip()
-
     apuesta_key = f"carrera:{idCarrera}:apuesta:{apuesta_id}"
 
     if not redis_db.exists(apuesta_key):
@@ -135,13 +131,12 @@ def buscarApuesta(redis_db, idCarrera, apuesta_id):
 
 def buscarCarrera(redis_db, idCarrera):
     """
-    Realiza una búsqueda directa (Key-Lookup) en Redis.
+    Realiza una búsqueda directa en Redis.
     Como el estado de la carrera se almacena en un HASH (`carrera:{id}:info`),
     la recuperación es O(1), permitiendo verificar al instante si la carrera
     existe y cuál es su situación actual (ganador, estado, participantes).
     """
     idCarrera = str(idCarrera).strip()
-
     carrera_key = f"carrera:{idCarrera}:info"
 
     # Verificación de existencia antes de realizar el HGETALL
@@ -195,7 +190,7 @@ def actualizarEstadoCarrera(redis_db, idCarrera, nuevoEstado):
 
 def actualizarApuesta(redis_db, idCarrera, apuesta_id, nuevoMonto=None, nuevoEstado=None):
     """
-    Modificación parcial: utiliza HSET para actualizar solo los campos provistos (monto o estado),
+    Modificación parcial: utiliza HSET para actualizar solo los campos provistos,
     permitiendo cambios dinámicos sin necesidad de sobreescribir todo el objeto.
     """
     idCarrera = str(idCarrera).strip()

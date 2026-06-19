@@ -15,7 +15,7 @@ def conectarRedis():
     en lugar de bytes, simplificando la manipulación de datos en Python.
     """
     try:
-        # Inicialización del cliente Redis (pool de conexiones por defecto)
+        # Inicialización del cliente Redis
         redis_db = redis.Redis(host='localhost',port=6379,decode_responses=True)
 
         # Validación técnica: ping comprueba que el servidor esté activo
@@ -28,10 +28,9 @@ def conectarRedis():
 
 def leerDataset(filtros=None, campos=None):
     """
-    Generador de datos (Lazy Loader): Lee el CSV línea a línea.
-    El uso de 'yield' es una excelente práctica de memoria: en lugar de cargar
-    todo el archivo en RAM, entrega un registro a la vez, lo cual es ideal
-    para datasets grandes.
+    Generador de datos: Lee el CSV línea a línea.
+    El uso de 'yield', en lugar de cargar todo el archivo en RAM, entrega un registro a la vez,
+    lo cual es ideal para datasets grandes.
     """
     ruta_script = os.path.dirname(os.path.abspath(__file__))
     path = os.path.join(ruta_script, "..", "datasets", "race-result-horse.csv")
