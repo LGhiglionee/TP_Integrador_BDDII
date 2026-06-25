@@ -37,7 +37,7 @@ def recomendacion_entrenador_matchmaking(session, nombre):
         nombre = nombre.upper().strip()
         query = """
         MATCH (c:Caballo)-[:HIJO_DE]->(progenitor:Caballo)
-        WHERE toUpper(c.nombre) = $nombre_caballoAND progenitor.nombre IS NOT NULLAND progenitor.nombre <> 'Desconocido'AND progenitor.nombre <> 'Desconocida'
+        WHERE toUpper(c.nombre) = $nombre_caballo AND progenitor.nombre IS NOT NULL AND progenitor.nombre <> 'Desconocido' AND progenitor.nombre <> 'Desconocida'
 
         MATCH (progenitor)<-[:HIJO_DE]-(hermano:Caballo)-[:ENTRENADO_POR]->(e:Entrenador)
         WHERE e.nombre <> 'Desconocido'
@@ -78,7 +78,7 @@ def caballos_similares_diamante(session, nombre):
         query = """
         MATCH (c1:Caballo)-[:NIETO_DE]->(abuelo:Caballo)
         MATCH (c1)-[:ENTRENADO_POR]->(e:Entrenador)
-        WHERE toUpper(c1.nombre) = $nombre_caballoAND abuelo.nombre IS NOT NULLAND abuelo.nombre <> 'Desconocido'AND abuelo.nombre <> 'Desconocida'AND e.nombre <> 'Desconocido'
+        WHERE toUpper(c1.nombre) = $nombre_caballo AND abuelo.nombre IS NOT NULL AND abuelo.nombre <> 'Desconocido' AND abuelo.nombre <> 'Desconocida' AND e.nombre <> 'Desconocido'
 
         MATCH (c2:Caballo)-[:NIETO_DE]->(abuelo)
         MATCH (c2)-[:ENTRENADO_POR]->(e)
